@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature
 
 app = FastAPI(
     title="EarthWatch API",
@@ -29,8 +30,29 @@ def health_check():
     return {"status": "healthy"}
 
 @app.get("/api/temperature")
-def get_temperature():
-    return {"status": "coming soon", "description": "Live temperature data from Open-Meteo API"}
+def get_temperature(
+    lat: float = Query(default=19.31, description="Latitude"),
+    lon: float = Query(default=84.79, description="Longitude")
+):
+    """Live temperature data from Open-Meteo API"""
+    data = fetch_live_temperature(lat, lon)
+    return data
+
+@app.get("/api/temperature/global")
+def get_global_temperature():
+    """Live temperature for major cities worldwide"""
+    data = fetch_global_temperature()
+    return {"cities": data, "total": len(data)}
+
+@app.get("/api/historical")
+def get_historical(
+    lat: float = Query(default=19.31, description="Latitude"),
+    lon: float = Query(default=84.79, description="Longitude"),
+    years: int = Query(default=2, description="Number of years")
+):
+    """Historical climate data from NASA POWER API"""
+    data = fetch_historical_temperature(lat, lon, years)
+    return data
 
 @app.get("/api/anomalies")
 def get_anomalies():

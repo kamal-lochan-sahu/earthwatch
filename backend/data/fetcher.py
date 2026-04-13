@@ -44,14 +44,14 @@ def fetch_live_temperature(latitude: float, longitude: float):
             current_data = current_data.iloc[0]
         
         return {
-            "latitude": latitude,
-            "longitude": longitude,
-            "current_temperature": current_data["temperature"],
-            "current_humidity": current_data["humidity"],
-            "current_wind_speed": current_data["wind_speed"],
-            "timestamp": current_hour,
-            "hourly_data": df.to_dict(orient="records")
-        }
+    "latitude": latitude,
+    "longitude": longitude,
+    "current_temperature": float(current_data["temperature"]),
+    "current_humidity": float(current_data["humidity"]),
+    "current_wind_speed": float(current_data["wind_speed"]),
+    "timestamp": current_hour,
+    "hourly_data": df.to_dict(orient="records")
+}
         
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
