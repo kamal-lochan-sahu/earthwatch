@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature
+from ml.anomaly_detector import AnomalyDetector
 
 app = FastAPI(
     title="EarthWatch API",
@@ -55,8 +56,40 @@ def get_historical(
     return data
 
 @app.get("/api/anomalies")
-def get_anomalies():
-    return {"status": "coming soon", "description": "ML-detected climate anomalies"}
+def get_anomalies(
+    lat: float = Query(default=19.31, description="Latitude"),
+    lon: float = Query(default=84.79, description="Longitude")
+):
+    """ML-based anomaly detection using NASA historical + live temperature"""
+
+    # Step 1 — NASA se historical data lo
+    historical_data = fetch_historical_temperature(lat, lon, years=2)
+    data_records = historical_data.get("data", [])
+    temperatures = [record["avg_temp"] for record in data_records]
+
+    if len(temperatures) < 10:
+        return {"error": "Not enough historical data to train model"}
+
+    # Step 2 — Model train karo
+    detector = AnomalyDetector()
+    detector.train(temperatures)
+
+    # Step 3 — Live temperature lo
+    live_data = fetch_live_temperature(lat, lon)
+    live_temp = live_data.get("current_temperature")
+
+    if live_temp is None:
+        return {"error": "Could not fetch live temperature"}
+
+    # Step 4 — Anomaly check karo
+    result = detector.detect(live_temp)
+
+    return {
+        "location": {"lat": lat, "lon": lon},
+        "trained_on": len(temperatures),
+        "live_temperature": live_temp,
+        "anomaly_result": result
+    }
 
 @app.get("/api/co2")
 def get_co2():
