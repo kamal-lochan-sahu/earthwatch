@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature
+from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -89,25 +89,21 @@ def get_trends(
     lon: float = Query(default=84.79, description="Longitude"),
     years: int = Query(default=2, description="Number of years")
 ):
-    """Statistical trend analysis using NASA historical data"""
-
-    # Step 1 — NASA se data lo
     historical_data = fetch_historical_temperature(lat, lon, years)
     data_records = historical_data.get("data", [])
 
     if len(data_records) < 10:
         return {"error": "Not enough data for trend analysis"}
 
-    # Step 2 — TrendAnalyzer mein load karo
     analyzer = TrendAnalyzer()
     analyzer.load(data_records)
-
-    # Step 3 — Summary return karo
     return analyzer.summary()
 
 @app.get("/api/co2")
 def get_co2():
-    return {"status": "coming soon", "description": "Real-time CO2 concentration data"}
+    """Real CO2 concentration data from NOAA"""
+    data = fetch_co2_data()
+    return data
 
 @app.get("/api/events")
 def get_events():
