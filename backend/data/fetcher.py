@@ -166,3 +166,61 @@ def fetch_global_temperature():
             })
     
     return results
+
+    # ============================================
+# NOAA — CO2 Data Fetcher
+# ============================================
+
+def fetch_co2_data():
+    """
+    NOAA se latest CO2 concentration data fetch karta hai.
+    Mauna Loa Observatory — sabse accurate global CO2 readings.
+    """
+    url = "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv"
+    
+    try:
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        
+        lines = response.text.strip().split("\n")
+        data_lines = [l for l in lines if not l.startswith("#") and l.strip()]
+        
+        # Last 12 months
+        recent = data_lines[-12:]
+        
+        monthly = []
+        for line in recent:
+            parts = line.split(",")
+            if len(parts) >= 4:
+                try:
+                    year = int(parts[0].strip())
+                    month = int(parts[1].strip())
+                    co2 = float(parts[3].strip())  # column 4 = average CO2
+                    if co2 > 0:
+                        monthly.append({
+                            "year": year,
+                            "month": month,
+                            "co2_ppm": round(co2, 2)
+                        })
+                except:
+                    continue
+        
+        if not monthly:
+            return {"error": "No CO2 data parsed"}
+        
+        latest = monthly[-1]
+        first = monthly[0]
+        
+        return {
+            "latest_co2_ppm": latest["co2_ppm"],
+            "year": latest["year"],
+            "month": latest["month"],
+            "annual_increase": round(latest["co2_ppm"] - first["co2_ppm"], 2),
+            "monthly_data": monthly,
+            "safe_level_ppm": 350,
+            "pre_industrial_ppm": 280,
+            "current_status": "critical" if latest["co2_ppm"] > 420 else "warning"
+        }
+        
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
