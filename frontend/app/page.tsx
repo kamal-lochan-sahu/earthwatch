@@ -1,5 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+const GlobeView = dynamic(() => import("./components/GlobeView"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8 h-64 flex items-center justify-center">
+      <p className="text-gray-400">🌍 Loading Globe...</p>
+    </div>
+  ),
+});
 
 const API = "http://127.0.0.1:8000";
 
@@ -90,6 +100,9 @@ export default function Home() {
                 </p>
               </div>
             </div>
+
+            {/* 3D Globe */}
+            {cities.length > 0 && <GlobeView cities={cities} />}
 
             {/* Global Cities */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
