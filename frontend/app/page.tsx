@@ -7,19 +7,23 @@ export default function Home() {
   const [temperature, setTemperature] = useState<any>(null);
   const [anomaly, setAnomaly] = useState<any>(null);
   const [trends, setTrends] = useState<any>(null);
+  const [cities, setCities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [tempRes, anomalyRes, trendsRes] = await Promise.all([
+        const [tempRes, anomalyRes, trendsRes, citiesRes] = await Promise.all([
           fetch(`${API}/api/temperature`),
           fetch(`${API}/api/anomalies`),
           fetch(`${API}/api/trends`),
+          fetch(`${API}/api/temperature/global`),
         ]);
         setTemperature(await tempRes.json());
         setAnomaly(await anomalyRes.json());
         setTrends(await trendsRes.json());
+        const citiesData = await citiesRes.json();
+        setCities(citiesData.cities || []);
       } catch (e) {
         console.error(e);
       } finally {
@@ -28,6 +32,13 @@ export default function Home() {
     }
     fetchData();
   }, []);
+
+  const getTempColor = (temp: number) => {
+    if (temp >= 30) return "text-red-400";
+    if (temp >= 20) return "text-orange-400";
+    if (temp >= 10) return "text-yellow-400";
+    return "text-blue-400";
+  };
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
@@ -77,6 +88,24 @@ export default function Home() {
                 <p className="text-gray-500 text-xs mt-1">
                   {trends?.trend?.slope_per_year}°C/year
                 </p>
+              </div>
+            </div>
+
+            {/* Global Cities */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-bold text-white mb-4">🌐 Global Cities — Live Temperature</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {cities.map((city: any) => (
+                  <div key={city.city} className="bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <p className="text-white font-bold">{city.city}</p>
+                      <p className="text-gray-500 text-xs">💧 {city.humidity}% | 💨 {city.wind_speed} km/h</p>
+                    </div>
+                    <p className={`text-2xl font-bold ${getTempColor(city.temperature)}`}>
+                      {city.temperature}°
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
 
