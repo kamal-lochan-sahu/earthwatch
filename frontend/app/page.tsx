@@ -11,7 +11,7 @@ const GlobeView = dynamic(() => import("./components/GlobeView"), {
   ),
 });
 
-const API = "http://127.0.0.1:8000";
+const API = "https://earthwatch.onrender.com";
 
 export default function Home() {
   const [temperature, setTemperature] = useState<any>(null);
