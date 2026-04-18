@@ -18,22 +18,25 @@ export default function Home() {
   const [anomaly, setAnomaly] = useState<any>(null);
   const [trends, setTrends] = useState<any>(null);
   const [cities, setCities] = useState<any[]>([]);
+  const [co2, setCo2] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [tempRes, anomalyRes, trendsRes, citiesRes] = await Promise.all([
+        const [tempRes, anomalyRes, trendsRes, citiesRes, co2Res] = await Promise.all([
           fetch(`${API}/api/temperature`),
           fetch(`${API}/api/anomalies`),
           fetch(`${API}/api/trends`),
           fetch(`${API}/api/temperature/global`),
+          fetch(`${API}/api/co2`),
         ]);
         setTemperature(await tempRes.json());
         setAnomaly(await anomalyRes.json());
         setTrends(await trendsRes.json());
         const citiesData = await citiesRes.json();
         setCities(citiesData.cities || []);
+        setCo2(await co2Res.json());
       } catch (e) {
         console.error(e);
       } finally {
@@ -70,8 +73,8 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* Live Temperature */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Top Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
                 <p className="text-gray-400 text-sm mb-1">🌡️ Live Temperature</p>
                 <p className="text-green-400 text-3xl font-bold">
@@ -81,7 +84,7 @@ export default function Home() {
               </div>
 
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <p className="text-gray-400 text-sm mb-1">🤖 ML Anomaly Status</p>
+                <p className="text-gray-400 text-sm mb-1">🤖 ML Anomaly</p>
                 <p className={`text-3xl font-bold ${anomaly?.anomaly_result?.is_anomaly ? "text-red-400" : "text-green-400"}`}>
                   {anomaly?.anomaly_result?.is_anomaly ? "⚠️ Anomaly!" : "✅ Normal"}
                 </p>
@@ -99,6 +102,37 @@ export default function Home() {
                   {trends?.trend?.slope_per_year}°C/year
                 </p>
               </div>
+
+              {/* CO2 Card */}
+              <div className="bg-gray-900 border border-red-900 rounded-xl p-6">
+                <p className="text-gray-400 text-sm mb-1">🏭 CO2 Level</p>
+                <p className="text-red-400 text-3xl font-bold">
+                  {co2?.latest_co2_ppm} ppm
+                </p>
+                <p className="text-gray-500 text-xs mt-1">
+                  Safe: 350 ppm | Status: {co2?.current_status}
+                </p>
+              </div>
+            </div>
+
+            {/* CO2 Monthly Chart */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-bold text-white mb-4">🏭 CO2 Concentration — Last 12 Months (Mauna Loa)</h2>
+              <div className="flex items-end gap-2 h-32">
+                {co2?.monthly_data?.map((m: any, i: number) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <p className="text-red-400 text-xs font-bold">{m.co2_ppm}</p>
+                    <div
+                      className="w-full rounded-t-sm bg-red-500 opacity-80"
+                      style={{ height: `${((m.co2_ppm - 420) / 15) * 80 + 20}px` }}
+                    />
+                    <p className="text-gray-500 text-xs">{m.month}/{String(m.year).slice(2)}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-gray-500 text-xs mt-3 text-center">
+                Pre-industrial level: 280 ppm | Safe level: 350 ppm | Current: {co2?.latest_co2_ppm} ppm
+              </p>
             </div>
 
             {/* 3D Globe */}
@@ -145,7 +179,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Bottom Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
                 <p className="text-gray-400 text-xs mb-1">Trained On</p>
@@ -162,8 +196,8 @@ export default function Home() {
                 <p className="text-gray-500 text-xs">{trends?.coldest_day?.date}</p>
               </div>
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-                <p className="text-gray-400 text-xs mb-1">Humidity</p>
-                <p className="text-purple-400 font-bold text-xl">{temperature?.current_humidity}%</p>
+                <p className="text-gray-400 text-xs mb-1">CO2 Increase/Year</p>
+                <p className="text-red-400 font-bold text-xl">+{co2?.annual_increase} ppm</p>
               </div>
             </div>
           </>
