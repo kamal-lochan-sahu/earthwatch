@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data
+from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data, fetch_weather_events
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -107,4 +107,6 @@ def get_co2():
 
 @app.get("/api/events")
 def get_events():
-    return {"status": "coming soon", "description": "Extreme weather events feed"}
+    """Extreme weather events from ReliefWeb"""
+    data = fetch_weather_events()
+    return data
