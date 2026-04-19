@@ -141,7 +141,7 @@ MAJOR_CITIES = [
     {"name": "Cairo", "lat": 30.06, "lon": 31.24},
     {"name": "São Paulo", "lat": -23.55, "lon": -46.63},
     {"name": "London", "lat": 51.51, "lon": -0.13},
-    {"name": "Berhampur", "lat": 19.31, "lon": 84.79},
+    {"name": "Bhubaneswar", "lat": 20.30, "lon": 85.82},
 ]
 
 def fetch_global_temperature():
