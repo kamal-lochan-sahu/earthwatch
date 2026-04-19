@@ -249,7 +249,10 @@ def fetch_weather_events():
         data = response.json()
         
         events = []
-        for item in data.get("features", []):
+        all_items = data.get("features", [])
+        # Sirf last 10 events lo, sorted by date
+        all_items = sorted(all_items, key=lambda x: x.get("properties", {}).get("fromdate", ""), reverse=True)[:10]
+        for item in all_items:
             props = item.get("properties", {})
             events.append({
                 "id": props.get("eventid"),
