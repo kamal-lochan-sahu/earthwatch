@@ -15,8 +15,8 @@ const API = "https://earthwatch.onrender.com";
 
 interface WeatherEvent {
   title: string;
-  type: string;
-  severity: string;
+  type: any;        // ✅ changed
+  severity: any;    // ✅ changed
   date: string;
   location?: string;
   description?: string;
@@ -67,25 +67,25 @@ export default function Home() {
     return "text-blue-400";
   };
 
-  const getSeverityColor = (severity: string) => {
-    const s = severity?.toLowerCase();
-    if (s === "red" || s === "extreme" || s === "high") return "text-red-400 border-red-800";
-    if (s === "orange" || s === "moderate" || s === "medium") return "text-orange-400 border-orange-800";
-    if (s === "green" || s === "low" || s === "minor") return "text-green-400 border-green-800";
-    return "text-yellow-400 border-yellow-800";
-  };
+ const getSeverityColor = (severity: any) => {
+  const s = String(severity ?? "").toLowerCase();
+  if (s === "red" || s === "extreme" || s === "high") return "text-red-400 border-red-800";
+  if (s === "orange" || s === "moderate" || s === "medium") return "text-orange-400 border-orange-800";
+  if (s === "green" || s === "low" || s === "minor") return "text-green-400 border-green-800";
+  return "text-yellow-400 border-yellow-800";
+};
 
-  const getEventIcon = (type: string) => {
-    const t = type?.toLowerCase();
-    if (t?.includes("flood")) return "🌊";
-    if (t?.includes("storm") || t?.includes("cyclone") || t?.includes("hurricane")) return "🌀";
-    if (t?.includes("earthquake") || t?.includes("quake")) return "🫨";
-    if (t?.includes("fire") || t?.includes("wildfire")) return "🔥";
-    if (t?.includes("drought")) return "☀️";
-    if (t?.includes("volcano")) return "🌋";
-    if (t?.includes("snow") || t?.includes("blizzard")) return "❄️";
-    return "⚠️";
-  };
+const getEventIcon = (type: any) => {
+  const t = String(type ?? "").toLowerCase();
+  if (t.includes("flood")) return "🌊";
+  if (t.includes("storm") || t.includes("cyclone") || t.includes("hurricane")) return "🌀";
+  if (t.includes("earthquake") || t.includes("quake")) return "🫨";
+  if (t.includes("fire") || t.includes("wildfire")) return "🔥";
+  if (t.includes("drought")) return "☀️";
+  if (t.includes("volcano")) return "🌋";
+  if (t.includes("snow") || t.includes("blizzard")) return "❄️";
+  return "⚠️";
+};
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
@@ -213,7 +213,7 @@ export default function Home() {
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <p className="text-white font-bold text-sm leading-snug">{event.title}</p>
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getSeverityColor(event.severity)}`}>
-                            {event.severity?.toUpperCase()}
+                            {String(event.severity ?? "").toUpperCase()}
                           </span>
                         </div>
                         <div className="flex gap-3 flex-wrap">
