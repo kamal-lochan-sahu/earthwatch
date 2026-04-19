@@ -241,8 +241,7 @@ def fetch_weather_events():
     params = {
         "eventtypes": "EQ,TC,FL,VO,DR,WF",
         "alertlevel": "Orange,Red",
-        "limit": 5,
-        "fromdate": "2026-01-01"
+        "limit": 10
     }
     
     try:
