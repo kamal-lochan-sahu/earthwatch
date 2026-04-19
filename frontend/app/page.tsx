@@ -209,7 +209,7 @@ fetchTemp();
   );
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white p-8">
+    <main className="min-h-screen bg-gray-950 text-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
@@ -321,7 +321,7 @@ fetchTemp();
         {loadingCo2 ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
             <h2 className="text-xl font-bold text-white mb-4">🏭 CO2 Concentration — Last 12 Months (Mauna Loa)</h2>
-            <div className="flex items-end gap-2 h-32">
+            <div className="flex items-end gap-1 h-32 overflow-x-auto">
               {co2?.monthly_data?.map((m: any, i: number) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <p className="text-red-400 text-xs font-bold">{m.co2_ppm}</p>
