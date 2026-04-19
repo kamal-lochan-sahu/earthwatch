@@ -109,13 +109,23 @@ export default function Home() {
         setLoadingTrends(false);
       }
     }
-
-    fetchTemp();
+fetchTemp();
     setTimeout(() => fetchCo2(), 100);
     setTimeout(() => fetchCities(), 200);
     setTimeout(() => fetchEvents(), 300);
     setTimeout(() => fetchTrends(), 400);
+
+    const refreshInterval = setInterval(() => {
+      fetchTemp();
+      setTimeout(() => fetchCo2(), 100);
+      setTimeout(() => fetchCities(), 200);
+      setTimeout(() => fetchEvents(), 300);
+      setTimeout(() => fetchTrends(), 400);
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
+    
 
   // City Search Function
   const searchCityWeather = async () => {
