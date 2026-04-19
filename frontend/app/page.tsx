@@ -22,6 +22,16 @@ interface WeatherEvent {
   description?: string;
 }
 
+interface CitySearchResult {
+  city: string;
+  temperature: number;
+  humidity: number;
+  wind_speed: number;
+  is_anomaly: boolean;
+  z_score: number;
+  severity: string;
+}
+
 export default function Home() {
   const [temperature, setTemperature] = useState<any>(null);
   const [anomaly, setAnomaly] = useState<any>(null);
@@ -30,15 +40,19 @@ export default function Home() {
   const [co2, setCo2] = useState<any>(null);
   const [events, setEvents] = useState<WeatherEvent[]>([]);
 
-  // Har cheez ka alag loading state
   const [loadingTemp, setLoadingTemp] = useState(true);
   const [loadingCo2, setLoadingCo2] = useState(true);
   const [loadingCities, setLoadingCities] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrends, setLoadingTrends] = useState(true);
 
+  // Search state
+  const [searchCity, setSearchCity] = useState("");
+  const [searchResult, setSearchResult] = useState<CitySearchResult | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
   useEffect(() => {
-    // 1. PEHLE — Temperature aur Anomaly (sabse zaroori)
     async function fetchTemp() {
       try {
         const [tempRes, anomalyRes] = await Promise.all([
@@ -53,8 +67,6 @@ export default function Home() {
         setLoadingTemp(false);
       }
     }
-
-    // 2. PHIR — CO2
     async function fetchCo2() {
       try {
         const res = await fetch(`${API}/api/co2`);
@@ -65,8 +77,6 @@ export default function Home() {
         setLoadingCo2(false);
       }
     }
-
-    // 3. PHIR — Cities (Globe ke liye)
     async function fetchCities() {
       try {
         const res = await fetch(`${API}/api/temperature/global`);
@@ -78,8 +88,6 @@ export default function Home() {
         setLoadingCities(false);
       }
     }
-
-    // 4. PHIR — Events
     async function fetchEvents() {
       try {
         const res = await fetch(`${API}/api/events`);
@@ -91,8 +99,6 @@ export default function Home() {
         setLoadingEvents(false);
       }
     }
-
-    // 5. SABSE BAAD — Trends (heavy calculation)
     async function fetchTrends() {
       try {
         const res = await fetch(`${API}/api/trends`);
@@ -104,14 +110,62 @@ export default function Home() {
       }
     }
 
-    // Pehle temp shuru karo
     fetchTemp();
-    // Thodi der baad baaki sab
     setTimeout(() => fetchCo2(), 100);
     setTimeout(() => fetchCities(), 200);
     setTimeout(() => fetchEvents(), 300);
     setTimeout(() => fetchTrends(), 400);
   }, []);
+
+  // City Search Function
+  const searchCityWeather = async () => {
+    if (!searchCity.trim()) return;
+
+    setSearchLoading(true);
+    setSearchError("");
+    setSearchResult(null);
+
+    try {
+      // Step 1: OpenStreetMap se lat/lon lo
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchCity)}&format=json&limit=1`
+      );
+      const geoData = await geoRes.json();
+
+      if (!geoData || geoData.length === 0) {
+        setSearchError("❌ City nahi mili! Dobara try karo.");
+        setSearchLoading(false);
+        return;
+      }
+
+      const lat = parseFloat(geoData[0].lat);
+      const lon = parseFloat(geoData[0].lon);
+
+      // Step 2: Temperature + Anomaly fetch karo
+      const [tempRes, anomalyRes] = await Promise.all([
+        fetch(`${API}/api/temperature?lat=${lat}&lon=${lon}`),
+        fetch(`${API}/api/anomalies?lat=${lat}&lon=${lon}`),
+      ]);
+
+      const tempData = await tempRes.json();
+      const anomalyData = await anomalyRes.json();
+
+      setSearchResult({
+        city: geoData[0].display_name.split(",")[0],
+        temperature: tempData.current_temperature,
+        humidity: tempData.current_humidity,
+        wind_speed: tempData.current_wind_speed,
+        is_anomaly: anomalyData.anomaly_result?.is_anomaly,
+        z_score: anomalyData.anomaly_result?.z_score,
+        severity: anomalyData.anomaly_result?.severity,
+      });
+
+    } catch (e) {
+      setSearchError("❌ Kuch error aaya! Dobara try karo.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const getTempColor = (temp: number) => {
     if (temp >= 30) return "text-red-400";
@@ -140,7 +194,6 @@ export default function Home() {
     return "⚠️";
   };
 
-  // Skeleton shimmer component
   const Skeleton = ({ className }: { className: string }) => (
     <div className={`animate-pulse bg-gray-800 rounded-xl ${className}`} />
   );
@@ -159,25 +212,73 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Top Stats — Pehle Dikhta Hai */}
+        {/* 🔍 CITY SEARCH BOX */}
+        <div className="bg-gray-900 border border-green-800 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-bold text-white mb-4">🔍 Search Any City</h2>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={searchCity}
+              onChange={(e) => setSearchCity(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && searchCityWeather()}
+              placeholder="City name likho... jaise Mumbai, Paris, Tokyo"
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
+            />
+            <button
+              onClick={searchCityWeather}
+              disabled={searchLoading}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-white font-bold px-6 py-3 rounded-lg transition-colors"
+            >
+              {searchLoading ? "⏳" : "Search"}
+            </button>
+          </div>
+
+          {/* Error */}
+          {searchError && (
+            <p className="text-red-400 text-sm mt-3">{searchError}</p>
+          )}
+
+          {/* Search Result */}
+          {searchResult && (
+            <div className="mt-4 bg-gray-800 rounded-xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-gray-400 text-xs mb-1">📍 City</p>
+                <p className="text-white font-bold text-lg">{searchResult.city}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs mb-1">🌡️ Temperature</p>
+                <p className={`font-bold text-2xl ${getTempColor(searchResult.temperature)}`}>
+                  {searchResult.temperature}°C
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs mb-1">🤖 Anomaly</p>
+                <p className={`font-bold text-lg ${searchResult.is_anomaly ? "text-red-400" : "text-green-400"}`}>
+                  {searchResult.is_anomaly ? "⚠️ Anomaly!" : "✅ Normal"}
+                </p>
+                <p className="text-gray-500 text-xs">Z-Score: {searchResult.z_score}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs mb-1">💧 Humidity</p>
+                <p className="text-blue-400 font-bold text-lg">{searchResult.humidity}%</p>
+                <p className="text-gray-500 text-xs">💨 {searchResult.wind_speed} km/h</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Temperature Card */}
-          {loadingTemp ? (
-            <Skeleton className="h-32" />
-          ) : (
+          {loadingTemp ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <p className="text-gray-400 text-sm mb-1">🌡️ Live Temperature</p>
               <p className="text-green-400 text-3xl font-bold">
                 {temperature?.current_temperature ?? "..."}°C
               </p>
-              <p className="text-gray-500 text-xs mt-1">Berhampur, Odisha</p>
+              <p className="text-gray-500 text-xs mt-1">Delhi, India</p>
             </div>
           )}
-
-          {/* Anomaly Card */}
-          {loadingTemp ? (
-            <Skeleton className="h-32" />
-          ) : (
+          {loadingTemp ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <p className="text-gray-400 text-sm mb-1">🤖 ML Anomaly</p>
               <p className={`text-3xl font-bold ${anomaly?.anomaly_result?.is_anomaly ? "text-red-400" : "text-green-400"}`}>
@@ -188,58 +289,40 @@ export default function Home() {
               </p>
             </div>
           )}
-
-          {/* Trends Card */}
-          {loadingTrends ? (
-            <Skeleton className="h-32" />
-          ) : (
+          {loadingTrends ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <p className="text-gray-400 text-sm mb-1">📈 Climate Trend</p>
               <p className={`text-3xl font-bold ${trends?.trend?.trend === "warming" ? "text-red-400" : "text-blue-400"}`}>
                 {trends?.trend?.trend === "warming" ? "🔥 Warming" : "❄️ Cooling"}
               </p>
-              <p className="text-gray-500 text-xs mt-1">
-                {trends?.trend?.slope_per_year}°C/year
-              </p>
+              <p className="text-gray-500 text-xs mt-1">{trends?.trend?.slope_per_year}°C/year</p>
             </div>
           )}
-
-          {/* CO2 Card */}
-          {loadingCo2 ? (
-            <Skeleton className="h-32" />
-          ) : (
+          {loadingCo2 ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-red-900 rounded-xl p-6">
               <p className="text-gray-400 text-sm mb-1">🏭 CO2 Level</p>
-              <p className="text-red-400 text-3xl font-bold">
-                {co2?.latest_co2_ppm} ppm
-              </p>
-              <p className="text-gray-500 text-xs mt-1">
-                Safe: 350 ppm | Status: {co2?.current_status}
-              </p>
+              <p className="text-red-400 text-3xl font-bold">{co2?.latest_co2_ppm} ppm</p>
+              <p className="text-gray-500 text-xs mt-1">Safe: 350 ppm | Status: {co2?.current_status}</p>
             </div>
           )}
         </div>
 
         {/* CO2 Chart */}
-        {loadingCo2 ? (
-          <Skeleton className="h-48 mb-8" />
-        ) : (
+        {loadingCo2 ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
             <h2 className="text-xl font-bold text-white mb-4">🏭 CO2 Concentration — Last 12 Months (Mauna Loa)</h2>
             <div className="flex items-end gap-2 h-32">
               {co2?.monthly_data?.map((m: any, i: number) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <p className="text-red-400 text-xs font-bold">{m.co2_ppm}</p>
-                  <div
-                    className="w-full rounded-t-sm bg-red-500 opacity-80"
-                    style={{ height: `${((m.co2_ppm - 420) / 15) * 80 + 20}px` }}
-                  />
+                  <div className="w-full rounded-t-sm bg-red-500 opacity-80"
+                    style={{ height: `${((m.co2_ppm - 420) / 15) * 80 + 20}px` }} />
                   <p className="text-gray-500 text-xs">{m.month}/{String(m.year).slice(2)}</p>
                 </div>
               ))}
             </div>
             <p className="text-gray-500 text-xs mt-3 text-center">
-              Pre-industrial level: 280 ppm | Safe level: 350 ppm | Current: {co2?.latest_co2_ppm} ppm
+              Pre-industrial: 280 ppm | Safe: 350 ppm | Current: {co2?.latest_co2_ppm} ppm
             </p>
           </div>
         )}
@@ -248,9 +331,7 @@ export default function Home() {
         {!loadingCities && cities.length > 0 && <GlobeView cities={cities} />}
 
         {/* Global Cities */}
-        {loadingCities ? (
-          <Skeleton className="h-64 mb-8" />
-        ) : (
+        {loadingCities ? <Skeleton className="h-64 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
             <h2 className="text-xl font-bold text-white mb-4">🌐 Global Cities — Live Temperature</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -270,13 +351,9 @@ export default function Home() {
         )}
 
         {/* Events */}
-        {loadingEvents ? (
-          <Skeleton className="h-48 mb-8" />
-        ) : (
+        {loadingEvents ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-white mb-1">
-              🚨 Live Weather & Disaster Events
-            </h2>
+            <h2 className="text-xl font-bold text-white mb-1">🚨 Live Weather & Disaster Events</h2>
             <p className="text-gray-500 text-xs mb-4">Source: GDACS</p>
             {events.length === 0 ? (
               <p className="text-gray-500 text-sm text-center py-6">No active events reported.</p>
@@ -309,22 +386,18 @@ export default function Home() {
         )}
 
         {/* Monthly Averages */}
-        {loadingTrends ? (
-          <Skeleton className="h-48 mb-8" />
-        ) : (
+        {loadingTrends ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
             <h2 className="text-xl font-bold text-white mb-4">📅 Monthly Temperature Averages</h2>
             <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
               {trends?.monthly_averages?.map((m: any) => (
                 <div key={m.month} className="text-center">
-                  <div
-                    className="rounded-lg mb-1 mx-auto"
+                  <div className="rounded-lg mb-1 mx-auto"
                     style={{
                       height: `${(m.avg_temp / 40) * 80}px`,
                       width: "100%",
                       backgroundColor: m.avg_temp > 30 ? "#f87171" : m.avg_temp > 25 ? "#fb923c" : "#60a5fa",
-                    }}
-                  />
+                    }} />
                   <p className="text-gray-400 text-xs">
                     {["J","F","M","A","M","J","J","A","S","O","N","D"][m.month - 1]}
                   </p>
