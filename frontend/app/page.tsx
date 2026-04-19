@@ -423,7 +423,7 @@ fetchTemp();
           {loadingTemp ? <Skeleton className="h-24" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
               <p className="text-gray-400 text-xs mb-1">Trained On</p>
-              <p className="text-white font-bold text-xl">{anomaly?.trained_on} days</p>
+              <p className="text-white font-bold text-xl">{anomaly?.trained_on ?? "..."} days</p>
             </div>
           )}
           {loadingTrends ? <Skeleton className="h-24" /> : (
