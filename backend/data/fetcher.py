@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import time
 from datetime import datetime, timedelta
 
 # ============================================
@@ -153,6 +154,7 @@ def fetch_global_temperature():
     
     for city in MAJOR_CITIES:
         data = fetch_live_temperature(city["lat"], city["lon"])
+        time.sleep(0.5)  # Rate limit avoid karo
         
         if "error" not in data:
             results.append({
