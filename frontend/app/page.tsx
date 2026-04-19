@@ -13,30 +13,44 @@ const GlobeView = dynamic(() => import("./components/GlobeView"), {
 
 const API = "https://earthwatch.onrender.com";
 
+interface WeatherEvent {
+  title: string;
+  type: string;
+  severity: string;
+  date: string;
+  location?: string;
+  description?: string;
+}
+
 export default function Home() {
   const [temperature, setTemperature] = useState<any>(null);
   const [anomaly, setAnomaly] = useState<any>(null);
   const [trends, setTrends] = useState<any>(null);
   const [cities, setCities] = useState<any[]>([]);
   const [co2, setCo2] = useState<any>(null);
+  const [events, setEvents] = useState<WeatherEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [tempRes, anomalyRes, trendsRes, citiesRes, co2Res] = await Promise.all([
-          fetch(`${API}/api/temperature`),
-          fetch(`${API}/api/anomalies`),
-          fetch(`${API}/api/trends`),
-          fetch(`${API}/api/temperature/global`),
-          fetch(`${API}/api/co2`),
-        ]);
+        const [tempRes, anomalyRes, trendsRes, citiesRes, co2Res, eventsRes] =
+          await Promise.all([
+            fetch(`${API}/api/temperature`),
+            fetch(`${API}/api/anomalies`),
+            fetch(`${API}/api/trends`),
+            fetch(`${API}/api/temperature/global`),
+            fetch(`${API}/api/co2`),
+            fetch(`${API}/api/events`),
+          ]);
         setTemperature(await tempRes.json());
         setAnomaly(await anomalyRes.json());
         setTrends(await trendsRes.json());
         const citiesData = await citiesRes.json();
         setCities(citiesData.cities || []);
         setCo2(await co2Res.json());
+        const eventsData = await eventsRes.json();
+        setEvents(eventsData.events || []);
       } catch (e) {
         console.error(e);
       } finally {
@@ -51,6 +65,26 @@ export default function Home() {
     if (temp >= 20) return "text-orange-400";
     if (temp >= 10) return "text-yellow-400";
     return "text-blue-400";
+  };
+
+  const getSeverityColor = (severity: string) => {
+    const s = severity?.toLowerCase();
+    if (s === "red" || s === "extreme" || s === "high") return "text-red-400 border-red-800";
+    if (s === "orange" || s === "moderate" || s === "medium") return "text-orange-400 border-orange-800";
+    if (s === "green" || s === "low" || s === "minor") return "text-green-400 border-green-800";
+    return "text-yellow-400 border-yellow-800";
+  };
+
+  const getEventIcon = (type: string) => {
+    const t = type?.toLowerCase();
+    if (t?.includes("flood")) return "🌊";
+    if (t?.includes("storm") || t?.includes("cyclone") || t?.includes("hurricane")) return "🌀";
+    if (t?.includes("earthquake") || t?.includes("quake")) return "🫨";
+    if (t?.includes("fire") || t?.includes("wildfire")) return "🔥";
+    if (t?.includes("drought")) return "☀️";
+    if (t?.includes("volcano")) return "🌋";
+    if (t?.includes("snow") || t?.includes("blizzard")) return "❄️";
+    return "⚠️";
   };
 
   return (
@@ -155,6 +189,54 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
+            {/* ===== WEATHER EVENTS FEED ===== */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-bold text-white mb-1">
+                🚨 Live Weather & Disaster Events
+              </h2>
+              <p className="text-gray-500 text-xs mb-4">Source: GDACS — Global Disaster Alert & Coordination System</p>
+
+              {events.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-6">
+                  No active events reported right now.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {events.map((event, i) => (
+                    <div
+                      key={i}
+                      className={`bg-gray-800 border rounded-lg p-4 flex items-start gap-4 ${getSeverityColor(event.severity)}`}
+                    >
+                      <span className="text-2xl mt-0.5">{getEventIcon(event.type)}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-white font-bold text-sm leading-snug">{event.title}</p>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getSeverityColor(event.severity)}`}>
+                            {event.severity?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex gap-3 flex-wrap">
+                          {event.type && (
+                            <p className="text-gray-400 text-xs">📌 {event.type}</p>
+                          )}
+                          {event.location && (
+                            <p className="text-gray-400 text-xs">📍 {event.location}</p>
+                          )}
+                          {event.date && (
+                            <p className="text-gray-500 text-xs">🕐 {event.date}</p>
+                          )}
+                        </div>
+                        {event.description && (
+                          <p className="text-gray-400 text-xs mt-1 line-clamp-2">{event.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* ===== END WEATHER EVENTS FEED ===== */}
 
             {/* Monthly Averages */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">

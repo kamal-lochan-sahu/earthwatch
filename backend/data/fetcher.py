@@ -224,3 +224,47 @@ def fetch_co2_data():
         
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
+
+        # ============================================
+# ReliefWeb API — Extreme Weather Events
+# ============================================
+
+def fetch_weather_events():
+    """
+    GDACS API se latest extreme weather events fetch karta hai.
+    UN ka official disaster alert system — free, no key needed.
+    """
+    url = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
+    
+    params = {
+        "eventtypes": "EQ,TC,FL,VO,DR,WF",
+        "alertlevel": "Orange,Red",
+        "limit": 10
+    }
+    
+    try:
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        
+        events = []
+        for item in data.get("features", []):
+            props = item.get("properties", {})
+            events.append({
+                "id": props.get("eventid"),
+                "title": props.get("htmldescription", "").replace("<b>", "").replace("</b>", ""),
+                "type": props.get("eventtype", "Unknown"),
+                "country": props.get("country", "Unknown"),
+                "date": props.get("fromdate", "")[:10],
+                "alert_level": props.get("alertlevel", ""),
+                "severity": props.get("severitydata", {}).get("severity", ""),
+                "url": props.get("url", {}).get("report", "")
+            })
+        
+        return {
+            "total": len(events),
+            "events": events
+        }
+        
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
