@@ -168,7 +168,7 @@ export default function Home() {
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <p className="text-gray-400 text-sm mb-1">🌡️ Live Temperature</p>
               <p className="text-green-400 text-3xl font-bold">
-                {temperature?.current_temperature}°C
+                {temperature?.current_temperature ?? "..."}°C
               </p>
               <p className="text-gray-500 text-xs mt-1">Berhampur, Odisha</p>
             </div>
