@@ -33,8 +33,8 @@ def health_check():
 
 @app.get("/api/temperature")
 def get_temperature(
-    lat: float = Query(default=19.31, description="Latitude"),
-    lon: float = Query(default=84.79, description="Longitude")
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude")
 ):
     data = fetch_live_temperature(lat, lon)
     return data
@@ -46,8 +46,8 @@ def get_global_temperature():
 
 @app.get("/api/historical")
 def get_historical(
-    lat: float = Query(default=19.31, description="Latitude"),
-    lon: float = Query(default=84.79, description="Longitude"),
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude"),
     years: int = Query(default=2, description="Number of years")
 ):
     data = fetch_historical_temperature(lat, lon, years)
@@ -55,8 +55,8 @@ def get_historical(
 
 @app.get("/api/anomalies")
 def get_anomalies(
-    lat: float = Query(default=19.31, description="Latitude"),
-    lon: float = Query(default=84.79, description="Longitude")
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude")
 ):
     historical_data = fetch_historical_temperature(lat, lon, years=2)
     data_records = historical_data.get("data", [])
@@ -85,8 +85,8 @@ def get_anomalies(
 
 @app.get("/api/trends")
 def get_trends(
-    lat: float = Query(default=19.31, description="Latitude"),
-    lon: float = Query(default=84.79, description="Longitude"),
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude"),
     years: int = Query(default=2, description="Number of years")
 ):
     historical_data = fetch_historical_temperature(lat, lon, years)
