@@ -46,10 +46,7 @@ export default function Home() {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrends, setLoadingTrends] = useState(true);
 
-  // Temperature unit state
   const [isFahrenheit, setIsFahrenheit] = useState(false);
-
-  // Search state
   const [searchCity, setSearchCity] = useState("");
   const [searchResult, setSearchResult] = useState<CitySearchResult | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -112,7 +109,8 @@ export default function Home() {
         setLoadingTrends(false);
       }
     }
-fetchTemp();
+
+    fetchTemp();
     setTimeout(() => fetchCo2(), 100);
     setTimeout(() => fetchCities(), 200);
     setTimeout(() => fetchEvents(), 300);
@@ -128,41 +126,30 @@ fetchTemp();
 
     return () => clearInterval(refreshInterval);
   }, []);
-    
 
-  // City Search Function
   const searchCityWeather = async () => {
     if (!searchCity.trim()) return;
-
     setSearchLoading(true);
     setSearchError("");
     setSearchResult(null);
-
     try {
-      // Step 1: OpenStreetMap se lat/lon lo
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchCity)}&format=json&limit=1`
       );
       const geoData = await geoRes.json();
-
       if (!geoData || geoData.length === 0) {
-        setSearchError("❌ City nahi mili! Dobara try karo.");
+        setSearchError("❌ City not found! Please try again.");
         setSearchLoading(false);
         return;
       }
-
       const lat = parseFloat(geoData[0].lat);
       const lon = parseFloat(geoData[0].lon);
-
-      // Step 2: Temperature + Anomaly fetch karo
       const [tempRes, anomalyRes] = await Promise.all([
         fetch(`${API}/api/temperature?lat=${lat}&lon=${lon}`),
         fetch(`${API}/api/anomalies?lat=${lat}&lon=${lon}`),
       ]);
-
       const tempData = await tempRes.json();
       const anomalyData = await anomalyRes.json();
-
       setSearchResult({
         city: geoData[0].display_name.split(",")[0],
         temperature: tempData.current_temperature,
@@ -172,17 +159,15 @@ fetchTemp();
         z_score: anomalyData.anomaly_result?.z_score,
         severity: anomalyData.anomaly_result?.severity,
       });
-
     } catch (e) {
-      setSearchError("❌ Kuch error aaya! Dobara try karo.");
+      setSearchError("❌ Something went wrong! Please try again.");
     } finally {
       setSearchLoading(false);
     }
   };
 
-  // Temperature conversion
   const convertTemp = (temp: number) => {
-    if (isFahrenheit) return Math.round((temp * 9/5) + 32);
+    if (isFahrenheit) return Math.round((temp * 9 / 5) + 32);
     return temp;
   };
   const tempUnit = isFahrenheit ? "°F" : "°C";
@@ -230,7 +215,6 @@ fetchTemp();
           <p className="text-gray-400 text-lg">
             Real-Time Climate Anomaly Detection & Environmental Intelligence
           </p>
-          {/* C/F Toggle + Share Button */}
           <div className="flex justify-center gap-3 mt-4">
             <button
               onClick={() => setIsFahrenheit(!isFahrenheit)}
@@ -239,8 +223,7 @@ fetchTemp();
               <span className={isFahrenheit ? "text-gray-500" : "text-green-400"}>°C</span>
               <span className="text-gray-600 mx-2">|</span>
               <span className={isFahrenheit ? "text-green-400" : "text-gray-500"}>°F</span>
-            {/* C/F Toggle + Share Button */}
-          <div className="flex justify-cent</button>
+            </button>
             <button
               onClick={() => {
                 if (navigator.share) {
@@ -261,7 +244,7 @@ fetchTemp();
           </div>
         </div>
 
-        {/* 🔍 CITY SEARCH BOX */}er gap-3 mt-4">
+        {/* Search Box */}
         <div className="bg-gray-900 border border-green-800 rounded-xl p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-4">🔍 Search Any City</h2>
           <div className="flex gap-3">
@@ -281,13 +264,7 @@ fetchTemp();
               {searchLoading ? "⏳" : "Search"}
             </button>
           </div>
-
-          {/* Error */}
-          {searchError && (
-            <p className="text-red-400 text-sm mt-3">{searchError}</p>
-          )}
-
-          {/* Search Result */}
+          {searchError && <p className="text-red-400 text-sm mt-3">{searchError}</p>}
           {searchResult && (
             <div className="mt-4 bg-gray-800 rounded-xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
@@ -403,9 +380,9 @@ fetchTemp();
         {loadingEvents ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
             <h2 className="text-xl font-bold text-white mb-1">🚨 Live Weather & Disaster Events</h2>
-            <p className="text-gray-500 text-xs mb-4">Source: GDACS</p>
+            <p className="text-gray-500 text-xs mb-4">Source: GDACS — Global Disaster Alert & Coordination System</p>
             {events.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-6">No active events reported.</p>
+              <p className="text-gray-500 text-sm text-center py-6">No active events reported right now.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {events.map((event, i) => (
@@ -414,9 +391,9 @@ fetchTemp();
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <p className="text-white font-bold text-sm">{event.title}</p>
-                        <p className="text-white font-bold text-xl">{anomaly?.trained_on ?? ".<span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getSeverityColor(event.severity)}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getSeverityColor(event.severity)}`}>
                           {isNaN(Number(event.severity)) ? String(event.severity ?? "").toUpperCase() : "⚠️ ALERT"}
-                        </span>.."} days</p>
+                        </span>
                       </div>
                       <div className="flex gap-3 flex-wrap">
                         {event.type && <p className="text-gray-400 text-xs">📌 {event.type}</p>}
