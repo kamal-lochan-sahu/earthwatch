@@ -252,7 +252,10 @@ def fetch_weather_events():
         events = []
         all_items = data.get("features", [])
         # Sirf last 10 events lo, sorted by date
-        all_items = sorted(all_items, key=lambda x: x.get("properties", {}).get("fromdate", ""), reverse=True)[:10]
+        from datetime import datetime, timedelta
+cutoff = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+all_items = [i for i in all_items if i.get("properties", {}).get("fromdate", "")[:10] >= cutoff]
+all_items = sorted(all_items, key=lambda x: x.get("properties", {}).get("fromdate", ""), reverse=True)[:10]
         for item in all_items:
             props = item.get("properties", {})
             events.append({
@@ -262,7 +265,7 @@ def fetch_weather_events():
                 "country": props.get("country", "Unknown"),
                 "date": props.get("fromdate", "")[:10],
                 "alert_level": props.get("alertlevel", ""),
-                "severity": props.get("severitydata", {}).get("severity", ""),
+                "severity": props.get("alertlevel", "Orange"),
                 "url": props.get("url", {}).get("report", "")
             })
         
