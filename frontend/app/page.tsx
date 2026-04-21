@@ -46,6 +46,9 @@ export default function Home() {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrends, setLoadingTrends] = useState(true);
 
+  // Temperature unit state
+  const [isFahrenheit, setIsFahrenheit] = useState(false);
+
   // Search state
   const [searchCity, setSearchCity] = useState("");
   const [searchResult, setSearchResult] = useState<CitySearchResult | null>(null);
@@ -177,6 +180,13 @@ fetchTemp();
     }
   };
 
+  // Temperature conversion
+  const convertTemp = (temp: number) => {
+    if (isFahrenheit) return Math.round((temp * 9/5) + 32);
+    return temp;
+  };
+  const tempUnit = isFahrenheit ? "°F" : "°C";
+
   const getTempColor = (temp: number) => {
     if (temp >= 30) return "text-red-400";
     if (temp >= 20) return "text-orange-400";
@@ -220,9 +230,38 @@ fetchTemp();
           <p className="text-gray-400 text-lg">
             Real-Time Climate Anomaly Detection & Environmental Intelligence
           </p>
+          {/* C/F Toggle + Share Button */}
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              onClick={() => setIsFahrenheit(!isFahrenheit)}
+              className="bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm font-bold transition-all"
+            >
+              <span className={isFahrenheit ? "text-gray-500" : "text-green-400"}>°C</span>
+              <span className="text-gray-600 mx-2">|</span>
+              <span className={isFahrenheit ? "text-green-400" : "text-gray-500"}>°F</span>
+            {/* C/F Toggle + Share Button */}
+          <div className="flex justify-cent</button>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: "EarthWatch 🌍",
+                    text: `Delhi temperature: ${temperature?.current_temperature}°C | CO2: ${co2?.latest_co2_ppm} ppm | Check live climate data!`,
+                    url: "https://earthwatch.vercel.app"
+                  });
+                } else {
+                  navigator.clipboard.writeText("https://earthwatch.vercel.app");
+                  alert("Link copied! Share EarthWatch 🌍");
+                }
+              }}
+              className="bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm font-bold text-gray-300 hover:text-white hover:border-green-500 transition-all"
+            >
+              🔗 Share
+            </button>
+          </div>
         </div>
 
-        {/* 🔍 CITY SEARCH BOX */}
+        {/* 🔍 CITY SEARCH BOX */}er gap-3 mt-4">
         <div className="bg-gray-900 border border-green-800 rounded-xl p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-4">🔍 Search Any City</h2>
           <div className="flex gap-3">
@@ -231,7 +270,7 @@ fetchTemp();
               value={searchCity}
               onChange={(e) => setSearchCity(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && searchCityWeather()}
-              placeholder="City name likho... jaise Mumbai, Paris, Tokyo"
+              placeholder="Search any city... e.g. Mumbai, Paris, Tokyo"
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
             />
             <button
@@ -258,7 +297,7 @@ fetchTemp();
               <div>
                 <p className="text-gray-400 text-xs mb-1">🌡️ Temperature</p>
                 <p className={`font-bold text-2xl ${getTempColor(searchResult.temperature)}`}>
-                  {searchResult.temperature}°C
+                  {convertTemp(searchResult.temperature)}{tempUnit}
                 </p>
               </div>
               <div>
@@ -283,7 +322,7 @@ fetchTemp();
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <p className="text-gray-400 text-sm mb-1">🌡️ Live Temperature</p>
               <p className="text-green-400 text-3xl font-bold">
-                {temperature?.current_temperature ?? "..."}°C
+                {temperature?.current_temperature ? `${convertTemp(temperature.current_temperature)}${tempUnit}` : `...${tempUnit}`}
               </p>
               <p className="text-gray-500 text-xs mt-1">Delhi, India</p>
             </div>
@@ -352,7 +391,7 @@ fetchTemp();
                     <p className="text-gray-500 text-xs">💧 {city.humidity}% | 💨 {city.wind_speed} km/h</p>
                   </div>
                   <p className={`text-2xl font-bold ${getTempColor(city.temperature)}`}>
-                    {city.temperature}°
+                    {convertTemp(city.temperature)}{tempUnit}
                   </p>
                 </div>
               ))}
