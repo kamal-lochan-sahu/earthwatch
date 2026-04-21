@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
+import LoadingScreen from "./components/LoadingScreen";
+
 const GlobeView = dynamic(() => import("./components/GlobeView"), {
   ssr: false,
   loading: () => (
@@ -46,6 +48,7 @@ export default function Home() {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrends, setLoadingTrends] = useState(true);
 
+  const [showLoader, setShowLoader] = useState(true);
   const [isFahrenheit, setIsFahrenheit] = useState(false);
   const [searchCity, setSearchCity] = useState("");
   const [searchResult, setSearchResult] = useState<CitySearchResult | null>(null);
@@ -196,6 +199,10 @@ export default function Home() {
   );
 
   return (
+    <>
+      {showLoader && (
+        <LoadingScreen onComplete={() => setShowLoader(false)} />
+      )}
     <main className="min-h-screen bg-gray-950 text-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
 
@@ -458,5 +465,6 @@ export default function Home() {
 
       </div>
     </main>
+    </>
   );
 }
