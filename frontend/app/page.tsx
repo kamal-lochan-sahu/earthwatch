@@ -375,9 +375,9 @@ fetchTemp();
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <p className="text-white font-bold text-sm">{event.title}</p>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getSeverityColor(event.severity)}`}>
-                          {String(event.severity ?? "").toUpperCase()}
-                        </span>
+                        <p className="text-white font-bold text-xl">{anomaly?.trained_on ?? ".<span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getSeverityColor(event.severity)}`}>
+                          {isNaN(Number(event.severity)) ? String(event.severity ?? "").toUpperCase() : "⚠️ ALERT"}
+                        </span>.."} days</p>
                       </div>
                       <div className="flex gap-3 flex-wrap">
                         {event.type && <p className="text-gray-400 text-xs">📌 {event.type}</p>}
