@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
 import LoadingScreen from "./components/LoadingScreen";
+import LanguageToggle from "./components/LanguageToggle";
+import { translations, REGION_LANGUAGE_MAP } from "./translations";
 
 const GlobeView = dynamic(() => import("./components/GlobeView"), {
   ssr: false,
@@ -50,10 +52,37 @@ export default function Home() {
 
   const [showLoader, setShowLoader] = useState(true);
   const [isFahrenheit, setIsFahrenheit] = useState(false);
+  const [currentLang, setCurrentLang] = useState("en");
+  const [regionalLang, setRegionalLang] = useState<string | null>(null);
   const [searchCity, setSearchCity] = useState("");
   const [searchResult, setSearchResult] = useState<CitySearchResult | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+
+  // Detect user region and set language
+  useEffect(() => {
+    async function detectRegion() {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        const countryCode = data.country_code;
+        const regionCode = data.region_code;
+
+        // Check India regions first
+        const indiaKey = `IN-${regionCode}`;
+        if (REGION_LANGUAGE_MAP[indiaKey]) {
+          setRegionalLang(REGION_LANGUAGE_MAP[indiaKey]);
+        } else if (REGION_LANGUAGE_MAP[countryCode]) {
+          setRegionalLang(REGION_LANGUAGE_MAP[countryCode]);
+        }
+      } catch (e) {
+        console.error("Region detection failed:", e);
+      }
+    }
+    detectRegion();
+  }, []);
+
+  const t = translations[currentLang] || translations["en"];
 
   useEffect(() => {
     async function fetchTemp() {
@@ -209,12 +238,12 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-green-400 mb-3">
-            🌍 EarthWatch
+            🌍 {t.title}
           </h1>
           <p className="text-gray-400 text-lg">
-            Real-Time Climate Anomaly Detection & Environmental Intelligence
+            {t.subtitle}
           </p>
-          <div className="flex justify-center gap-3 mt-4">
+          <div className="flex justify-center gap-3 mt-4 flex-wrap">
             <button
               onClick={() => setIsFahrenheit(!isFahrenheit)}
               className="bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm font-bold transition-all"
@@ -238,21 +267,26 @@ export default function Home() {
               }}
               className="bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm font-bold text-gray-300 hover:text-white hover:border-green-500 transition-all"
             >
-              🔗 Share
+              🔗 {t.share}
             </button>
+            <LanguageToggle
+              currentLang={currentLang}
+              regionalLang={regionalLang}
+              onLanguageChange={setCurrentLang}
+            />
           </div>
         </div>
 
         {/* Search Box */}
         <div className="bg-gray-900 border border-green-800 rounded-xl p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">🔍 Search Any City</h2>
+          <h2 className="text-xl font-bold text-white mb-4">🔍 {t.searchTitle}</h2>
           <div className="flex gap-3">
             <input
               type="text"
               value={searchCity}
               onChange={(e) => setSearchCity(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && searchCityWeather()}
-              placeholder="Search any city... e.g. Mumbai, Paris, Tokyo"
+              placeholder={t.searchPlaceholder}
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
             />
             <button
@@ -260,7 +294,7 @@ export default function Home() {
               disabled={searchLoading}
               className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-white font-bold px-6 py-3 rounded-lg transition-colors"
             >
-              {searchLoading ? "⏳" : "Search"}
+              {searchLoading ? "⏳" : t.searchButton}
             </button>
           </div>
           {searchError && <p className="text-red-400 text-sm mt-3">{searchError}</p>}
@@ -296,7 +330,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {loadingTemp ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-1">🌡️ Live Temperature</p>
+              <p className="text-gray-400 text-sm mb-1">🌡️ {t.liveTemp}</p>
               <p className="text-green-400 text-3xl font-bold">
                 {temperature?.current_temperature ? `${convertTemp(temperature.current_temperature)}${tempUnit}` : `...${tempUnit}`}
               </p>
@@ -305,9 +339,9 @@ export default function Home() {
           )}
           {loadingTemp ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-1">🤖 ML Anomaly</p>
+              <p className="text-gray-400 text-sm mb-1">🤖 {t.mlAnomaly}</p>
               <p className={`text-3xl font-bold ${anomaly?.anomaly_result?.is_anomaly ? "text-red-400" : "text-green-400"}`}>
-                {anomaly?.anomaly_result?.is_anomaly ? "⚠️ Anomaly!" : "✅ Normal"}
+                {anomaly?.anomaly_result?.is_anomaly ? t.anomaly : t.normal}
               </p>
               <p className="text-gray-500 text-xs mt-1">
                 Z-Score: {anomaly?.anomaly_result?.z_score} | {anomaly?.anomaly_result?.severity}
@@ -316,16 +350,16 @@ export default function Home() {
           )}
           {loadingTrends ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-1">📈 Climate Trend</p>
+              <p className="text-gray-400 text-sm mb-1">📈 {t.climateTrend}</p>
               <p className={`text-3xl font-bold ${trends?.trend?.trend === "warming" ? "text-red-400" : "text-blue-400"}`}>
-                {trends?.trend?.trend === "warming" ? "🔥 Warming" : "❄️ Cooling"}
+                {trends?.trend?.trend === "warming" ? t.warming : t.cooling}
               </p>
               <p className="text-gray-500 text-xs mt-1">{trends?.trend?.slope_per_year}°C/year</p>
             </div>
           )}
           {loadingCo2 ? <Skeleton className="h-32" /> : (
             <div className="bg-gray-900 border border-red-900 rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-1">🏭 CO2 Level</p>
+              <p className="text-gray-400 text-sm mb-1">🏭 {t.co2Level}</p>
               <p className="text-red-400 text-3xl font-bold">{co2?.latest_co2_ppm} ppm</p>
               <p className="text-gray-500 text-xs mt-1">Safe: 350 ppm | Status: {co2?.current_status}</p>
             </div>
@@ -335,7 +369,7 @@ export default function Home() {
         {/* CO2 Chart */}
         {loadingCo2 ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-white mb-4">🏭 CO2 Concentration — Last 12 Months (Mauna Loa)</h2>
+            <h2 className="text-xl font-bold text-white mb-4">🏭 {t.co2Chart}</h2>
             <div className="flex items-end gap-1 h-32 overflow-x-auto">
               {co2?.monthly_data?.map((m: any, i: number) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -358,7 +392,7 @@ export default function Home() {
         {/* Global Cities */}
         {loadingCities ? <Skeleton className="h-64 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-white mb-4">🌐 Global Cities — Live Temperature</h2>
+            <h2 className="text-xl font-bold text-white mb-4">🌐 {t.globalCities}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {cities.map((city: any) => (
                 <div key={city.city} className="bg-gray-800 rounded-lg p-4 flex justify-between items-center">
@@ -378,10 +412,10 @@ export default function Home() {
         {/* Events */}
         {loadingEvents ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-white mb-1">🚨 Live Weather & Disaster Events</h2>
+            <h2 className="text-xl font-bold text-white mb-1">🚨 {t.events}</h2>
             <p className="text-gray-500 text-xs mb-4">Source: GDACS — Global Disaster Alert & Coordination System</p>
             {events.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-6">No active events reported right now.</p>
+              <p className="text-gray-500 text-sm text-center py-6">{t.noEvents}</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {events.map((event, i) => (
@@ -413,7 +447,7 @@ export default function Home() {
         {/* Monthly Averages */}
         {loadingTrends ? <Skeleton className="h-48 mb-8" /> : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-white mb-4">📅 Monthly Temperature Averages</h2>
+            <h2 className="text-xl font-bold text-white mb-4">📅 {t.monthlyAvg}</h2>
             <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
               {trends?.monthly_averages?.map((m: any) => (
                 <div key={m.month} className="text-center">
@@ -437,27 +471,27 @@ export default function Home() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {loadingTemp ? <Skeleton className="h-24" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-xs mb-1">Trained On</p>
-              <p className="text-white font-bold text-xl">{anomaly?.trained_on ?? "..."} days</p>
+              <p className="text-gray-400 text-xs mb-1">{t.trainedOn}</p>
+              <p className="text-white font-bold text-xl">{anomaly?.trained_on ?? "..."} {t.days}</p>
             </div>
           )}
           {loadingTrends ? <Skeleton className="h-24" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-xs mb-1">Hottest Day</p>
+              <p className="text-gray-400 text-xs mb-1">{t.hottestDay}</p>
               <p className="text-red-400 font-bold">{trends?.hottest_day?.temp}°C</p>
               <p className="text-gray-500 text-xs">{trends?.hottest_day?.date}</p>
             </div>
           )}
           {loadingTrends ? <Skeleton className="h-24" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-xs mb-1">Coldest Day</p>
+              <p className="text-gray-400 text-xs mb-1">{t.coldestDay}</p>
               <p className="text-blue-400 font-bold">{trends?.coldest_day?.temp}°C</p>
               <p className="text-gray-500 text-xs">{trends?.coldest_day?.date}</p>
             </div>
           )}
           {loadingCo2 ? <Skeleton className="h-24" /> : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-xs mb-1">CO2 Increase/Year</p>
+              <p className="text-gray-400 text-xs mb-1">{t.co2Increase}</p>
               <p className="text-red-400 font-bold text-xl">+{co2?.annual_increase} ppm</p>
             </div>
           )}
