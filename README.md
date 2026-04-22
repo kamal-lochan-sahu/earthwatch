@@ -6,6 +6,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![ML](https://img.shields.io/badge/ML-Isolation%20Forest-purple)
 ![PWA](https://img.shields.io/badge/PWA-Enabled-orange)
+![Languages](https://img.shields.io/badge/Languages-21-brightgreen)
 
 ## 🚀 Live Demo
 - **Frontend:** https://earthwatch.vercel.app
@@ -25,7 +26,9 @@ EarthWatch is a full-stack climate intelligence platform that:
 - Tracks **real-time disaster events** from GDACS (UN System)
 - **Search any city** in the world for live temperature + anomaly
 - **PWA enabled** — installable on mobile as an app
-- **Auto-refresh** every 5 minutes for live data
+- **21 languages** — auto-detects user region and shows regional language
+- **°C/°F toggle** — switch between Celsius and Fahrenheit
+- **Entry animation** — smooth loading screen on startup
 
 ---
 
@@ -39,6 +42,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 | Data Sources | NASA POWER, Open-Meteo, NOAA CO2, GDACS Events |
 | Deploy | Vercel (Frontend), Render (Backend) |
 | PWA | Web App Manifest, Custom Icons |
+| i18n | 21 Languages — Auto region detection via ipapi.co |
 
 ---
 
@@ -54,6 +58,18 @@ EarthWatch is a full-stack climate intelligence platform that:
 - **Method:** Linear Regression (SciPy stats)
 - **Output:** Warming/cooling trend in °C/year
 - **Statistics:** R-squared, p-value, statistical significance
+
+---
+
+## 🌐 Supported Languages (21)
+
+### Indian Languages (11)
+Hindi, Odia, Bengali, Tamil, Telugu, Kannada, Malayalam, Marathi, Punjabi, Gujarati, English
+
+### International Languages (10)
+German, French, Japanese, Spanish, Arabic, Portuguese, Chinese, Korean, Italian, Russian
+
+**Auto-detection:** Site detects user's region and shows regional language in toggle. Default is always English.
 
 ---
 
@@ -81,11 +97,14 @@ EarthWatch is a full-stack climate intelligence platform that:
 - 🏭 **CO2 Tracker** — Live Mauna Loa data
 - 🌍 **3D Globe** — Interactive global temperature map
 - 🌐 **9 Global Cities** — Real-time temperatures
-- 🚨 **Disaster Events** — GDACS live feed
+- 🚨 **Disaster Events** — GDACS live feed (last 90 days)
 - 🔍 **City Search** — Any city worldwide
-- ⚡ **Auto Refresh** — Every 5 minutes
+- 🌐 **21 Languages** — Auto region detection
+- 🌡️ **°C/°F Toggle** — Unit switching
+- 🔗 **Share Button** — Share EarthWatch
 - 📱 **PWA** — Install on mobile
-- 🎨 **Skeleton Loading** — Smooth UX
+- 🎬 **Entry Animation** — Smooth loading screen
+- 🎨 **Skeleton Loading** — No blank screens
 
 ---
 
