@@ -132,7 +132,6 @@ npm run dev
 **Kamal Lochan Sahu**
 - GitHub: [@kamal-lochan-sahu](https://github.com/kamal-lochan-sahu)
 - Location: Berhampur, Odisha, India
-- Goal: Germany IT Ausbildung 🇩🇪
 
 ---
 
