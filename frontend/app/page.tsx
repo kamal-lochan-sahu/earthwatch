@@ -4,6 +4,12 @@ import dynamic from "next/dynamic";
 
 import LoadingScreen from "./components/LoadingScreen";
 import LanguageToggle from "./components/LanguageToggle";
+import CSVExport from "./components/CSVExport";
+import ClimateIndex from "./components/ClimateIndex";
+import ArcticIce from "./components/ArcticIce";
+import SeasonalChart from "./components/SeasonalChart";
+import CorrelationMatrix from "./components/CorrelationMatrix";
+import AirQuality from "./components/AirQuality";
 import { translations, REGION_LANGUAGE_MAP } from "./translations";
 
 const GlobeView = dynamic(() => import("./components/GlobeView"), {
@@ -495,6 +501,18 @@ export default function Home() {
               <p className="text-red-400 font-bold text-xl">+{co2?.annual_increase} ppm</p>
             </div>
           )}
+        </div>
+
+
+        {/* Research Features */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-green-400 mb-6">Research Features</h2>
+          <AirQuality lat={28.61} lon={77.21} cityName="Delhi" />
+          <ClimateIndex />
+          <ArcticIce />
+          <SeasonalChart />
+          <CorrelationMatrix />
+          <CSVExport />
         </div>
 
       </div>
