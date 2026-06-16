@@ -110,3 +110,58 @@ def get_events():
     """Extreme weather events from ReliefWeb"""
     data = fetch_weather_events()
     return data
+
+# ============================================
+# NEW RESEARCH ENDPOINTS
+# ============================================
+
+@app.get("/api/export/csv")
+def export_csv(
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude"),
+    years: int = Query(default=2, description="Years of data")
+):
+    """Download historical temperature data as JSON (frontend converts to CSV)"""
+    from data.fetcher import fetch_csv_export
+    return fetch_csv_export(lat, lon, years)
+
+
+@app.get("/api/climate-index")
+def get_climate_index():
+    """El Nino / La Nina detection via NOAA ONI Index"""
+    from data.fetcher import fetch_climate_index
+    return fetch_climate_index()
+
+
+@app.get("/api/arctic-ice")
+def get_arctic_ice():
+    """Arctic Sea Ice Extent from NSIDC"""
+    from data.fetcher import fetch_arctic_ice
+    return fetch_arctic_ice()
+
+
+@app.get("/api/seasonal")
+def get_seasonal(
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude")
+):
+    """Seasonal decomposition: trend + seasonality + residual"""
+    from data.fetcher import fetch_seasonal_decomposition
+    return fetch_seasonal_decomposition(lat, lon)
+
+
+@app.get("/api/correlation")
+def get_correlation():
+    """Correlation matrix: CO2 vs Temperature vs Sea Level"""
+    from data.fetcher import fetch_correlation_data
+    return fetch_correlation_data()
+
+
+@app.get("/api/air-quality")
+def get_air_quality(
+    lat: float = Query(default=28.61, description="Latitude"),
+    lon: float = Query(default=77.21, description="Longitude")
+):
+    """Real-time Air Quality Index from Open-Meteo"""
+    from data.fetcher import fetch_air_quality
+    return fetch_air_quality(lat, lon)
