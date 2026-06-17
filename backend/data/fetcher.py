@@ -285,9 +285,9 @@ def fetch_climate_index():
 
 def fetch_arctic_ice():
     """Arctic sea ice extent from NSIDC"""
-    url = "https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02135/north/daily/data/N_seaice_extent_daily_v3.0.csv"
+    url = "https://noaadata.apps.nsidc.org/NOAA/G02135/north/daily/data/N_seaice_extent_daily_v3.0.csv"
     try:
-        response = requests.get(url, timeout=20)
+        response = requests.get(url, timeout=20, verify=False)
         response.raise_for_status()
         lines = response.text.strip().split("\n")
         data_lines = [l for l in lines if l.strip() and not l.startswith("Year") and not l.startswith("#")]
