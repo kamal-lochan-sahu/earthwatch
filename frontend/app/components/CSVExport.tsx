@@ -4,8 +4,8 @@ import { useState } from "react";
 const API = "https://earthwatch.onrender.com";
 
 export default function CSVExport() {
-  const [lat, setLat] = useState("28.61");
-  const [lon, setLon] = useState("77.21");
+  const [lat] = useState("28.61");
+  const [lon] = useState("77.21");
   const [years, setYears] = useState("2");
   const [loading, setLoading] = useState(false);
   const [cityName, setCityName] = useState("Delhi");
@@ -37,7 +37,7 @@ export default function CSVExport() {
       a.download = `earthwatch_${cityName}_${years}yr.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (e) {
+    } catch {
       alert("Export failed! Try again.");
     } finally {
       setLoading(false);

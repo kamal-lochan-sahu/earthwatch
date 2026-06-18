@@ -89,7 +89,7 @@ export default function Home() {
         } else if (REGION_LANGUAGE_MAP[countryCode]) {
           setRegionalLang(REGION_LANGUAGE_MAP[countryCode]);
         }
-      } catch (e) {
+      } catch {
         console.error("Region detection failed:", e);
       }
     }
@@ -107,7 +107,7 @@ export default function Home() {
         ]);
         setTemperature(await tempRes.json());
         setAnomaly(await anomalyRes.json());
-      } catch (e) {
+      } catch {
         console.error("Temp error:", e);
       } finally {
         setLoadingTemp(false);
@@ -117,7 +117,7 @@ export default function Home() {
       try {
         const res = await fetch(`${API}/api/co2`);
         setCo2(await res.json());
-      } catch (e) {
+      } catch {
         console.error("CO2 error:", e);
       } finally {
         setLoadingCo2(false);
@@ -128,7 +128,7 @@ export default function Home() {
         const res = await fetch(`${API}/api/temperature/global`);
         const data = await res.json();
         setCities(data.cities || []);
-      } catch (e) {
+      } catch {
         console.error("Cities error:", e);
       } finally {
         setLoadingCities(false);
@@ -139,7 +139,7 @@ export default function Home() {
         const res = await fetch(`${API}/api/events`);
         const data = await res.json();
         setEvents(data.events || []);
-      } catch (e) {
+      } catch {
         console.error("Events error:", e);
       } finally {
         setLoadingEvents(false);
@@ -149,7 +149,7 @@ export default function Home() {
       try {
         const res = await fetch(`${API}/api/trends`);
         setTrends(await res.json());
-      } catch (e) {
+      } catch {
         console.error("Trends error:", e);
       } finally {
         setLoadingTrends(false);
@@ -197,7 +197,7 @@ export default function Home() {
         z_score: anomalyData.anomaly_result?.z_score,
         severity: anomalyData.anomaly_result?.severity,
       });
-    } catch (e) {
+    } catch {
       setSearchError("❌ Something went wrong! Please try again.");
     } finally {
       setSearchLoading(false);
