@@ -24,7 +24,7 @@ export default function GlobeView({ cities }: GlobeViewProps) {
     const initGlobe = async () => {
       const Globe = (await import("globe.gl")).default;
 
-      globe = new Globe()(globeRef.current!)
+      globe = (Globe as any)(globeRef.current!)
         .width(globeRef.current!.offsetWidth)
         .height(500)
         .backgroundColor("#0a0a0f")
