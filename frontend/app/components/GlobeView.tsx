@@ -24,12 +24,12 @@ export default function GlobeView({ cities }: GlobeViewProps) {
     const initGlobe = async () => {
       const Globe = (await import("globe.gl")).default;
 
-      globe = Globe()(globeRef.current!)
+      globe = new Globe()(globeRef.current!)
         .width(globeRef.current!.offsetWidth)
         .height(500)
         .backgroundColor("#0a0a0f")
         .globeImageUrl(
-          "//unpkg.com/three-globe/example/img/earth-night.jpg"
+          "https://unpkg.com/three-globe/example/img/earth-night.jpg"
         )
         .pointsData(cities)
         .pointLat("latitude")
