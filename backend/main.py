@@ -165,3 +165,70 @@ def get_air_quality(
     """Real-time Air Quality Index from Open-Meteo"""
     from data.fetcher import fetch_air_quality
     return fetch_air_quality(lat, lon)
+
+
+# ============================================
+# V2 RESEARCH ENDPOINTS
+# ============================================
+
+@app.get("/api/heat-index")
+def get_heat_index(
+    lat: float = Query(default=28.61),
+    lon: float = Query(default=77.21)
+):
+    from data.fetcher import fetch_heat_index
+    return fetch_heat_index(lat, lon)
+
+@app.get("/api/tipping-points")
+def get_tipping_points():
+    from data.fetcher import fetch_tipping_points
+    return fetch_tipping_points()
+
+@app.get("/api/uv-solar")
+def get_uv_solar(
+    lat: float = Query(default=28.61),
+    lon: float = Query(default=77.21)
+):
+    from data.fetcher import fetch_uv_solar
+    return fetch_uv_solar(lat, lon)
+
+@app.get("/api/compare-cities")
+def get_city_comparison(
+    lat1: float = Query(default=28.61),
+    lon1: float = Query(default=77.21),
+    lat2: float = Query(default=19.08),
+    lon2: float = Query(default=72.88),
+    city1: str = Query(default="Delhi"),
+    city2: str = Query(default="Mumbai")
+):
+    from data.fetcher import fetch_city_comparison
+    return fetch_city_comparison(lat1, lon1, lat2, lon2, city1, city2)
+
+@app.get("/api/year-comparison")
+def get_year_comparison(
+    lat: float = Query(default=28.61),
+    lon: float = Query(default=77.21)
+):
+    from data.fetcher import fetch_year_comparison
+    return fetch_year_comparison(lat, lon)
+
+@app.get("/api/anomaly-calendar")
+def get_anomaly_calendar(
+    lat: float = Query(default=28.61),
+    lon: float = Query(default=77.21)
+):
+    from data.fetcher import fetch_anomaly_calendar
+    return fetch_anomaly_calendar(lat, lon)
+
+@app.get("/api/forecast")
+def get_forecast(
+    lat: float = Query(default=28.61),
+    lon: float = Query(default=77.21)
+):
+    from data.fetcher import fetch_temperature_forecast
+    return fetch_temperature_forecast(lat, lon)
+
+@app.get("/api/health-dashboard")
+def get_health_dashboard():
+    from data.fetcher import fetch_api_health
+    return fetch_api_health()
