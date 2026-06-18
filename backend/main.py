@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data, fetch_weather_events
 from ml.anomaly_detector import AnomalyDetector
@@ -18,6 +18,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def validate_coords(lat: float, lon: float, years: int = None):
+    if not (-90 <= lat <= 90):
+        raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
+    if not (-180 <= lon <= 180):
+        raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+    if years is not None and not (1 <= years <= 10):
+        raise HTTPException(status_code=400, detail="Years must be between 1 and 10")
+
 @app.get("/")
 def read_root():
     return {
@@ -36,7 +45,10 @@ def get_temperature(
     lat: float = Query(default=28.61, description="Latitude"),
     lon: float = Query(default=77.21, description="Longitude")
 ):
+    validate_coords(lat, lon)
     data = fetch_live_temperature(lat, lon)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=data["error"])
     return data
 
 @app.get("/api/temperature/global")
