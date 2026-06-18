@@ -69,7 +69,7 @@ export default function CorrelationMatrix() {
           </div>
         ))}
       </div>
-      <p className="text-gray-600 text-xs mt-2 text-center">CO2 trend (ppm) | Source: NOAA + NASA Sea Level</p>
+      <p className="text-gray-600 text-xs mt-2 text-center">CO2: NOAA Mauna Loa | Sea Level: estimated trend (3.3mm/yr since 1993) — illustrative only</p>
     </div>
   );
 }

@@ -52,8 +52,8 @@ ${tipping.tipping_points?.map((t: any) => `<tr><td>${t.name}</td><td>${t.current
   };
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-      <h2 className="text-xl font-bold text-white mb-1">Climate Report Generator</h2>
-      <p className="text-gray-500 text-xs mb-4">Download complete climate report as HTML (printable PDF)</p>
+      <h2 className="text-xl font-bold text-white mb-1">Climate Report Generator (HTML)</h2>
+      <p className="text-gray-500 text-xs mb-4">Download complete climate report as HTML file (open in browser to print as PDF)</p>
       <div className="flex gap-3">
         <input value={city} onChange={e => setCity(e.target.value)} placeholder="City name" className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-green-500" />
         <button onClick={generateReport} disabled={loading} className="bg-green-700 hover:bg-green-600 disabled:bg-gray-700 text-white font-bold px-5 py-2 rounded-lg text-sm">

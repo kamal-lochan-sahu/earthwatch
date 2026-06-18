@@ -290,7 +290,7 @@ def fetch_arctic_ice():
     ]
     for url in urls:
         try:
-            response = requests.get(url, timeout=20, verify=False)
+            response = requests.get(url, timeout=20, verify=True)
             if response.status_code == 200:
                 lines = response.text.strip().split("\n")
                 data_lines = [l for l in lines if l.strip() and not l.startswith("Year") and not l.startswith("#")]
@@ -410,7 +410,9 @@ def fetch_correlation_data():
                     else "Weak correlation"
                 )
             },
-            "source": "NOAA CO2 + NASA Sea Level data"
+            "source": "NOAA CO2 + estimated sea level trend (3.3mm/year since 1993)",
+            "disclaimer": "Sea level values are estimated from known satellite altimetry trend, not raw NASA data",
+            "data_type": "estimated"
         }
     except Exception as e:
         return {"error": str(e)}
@@ -499,12 +501,14 @@ def fetch_heat_index(latitude: float, longitude: float):
         if idx == -1: idx = len(times) // 2
         t = temps[idx]
         h = humidity[idx]
-        # Rothfusz heat index formula
-        if t >= 27:
-            hi = (-8.78469475556 + 1.61139411*t + 2.33854883889*h
-                  - 0.14611605*t*h - 0.012308094*t*t
-                  - 0.0164248277778*h*h + 0.002211732*t*t*h
-                  + 0.00072546*t*h*h - 0.000003582*t*t*h*h)
+        # Rothfusz heat index formula (requires Fahrenheit input)
+        tf = (t * 9/5) + 32  # Convert Celsius to Fahrenheit
+        if tf >= 80:  # 80F = ~27C
+            hi_f = (-42.379 + 2.04901523*tf + 10.14333127*h
+                    - 0.22475541*tf*h - 0.00683783*tf*tf
+                    - 0.05481717*h*h + 0.00122874*tf*tf*h
+                    + 0.00085282*tf*h*h - 0.00000199*tf*tf*h*h)
+            hi = round((hi_f - 32) * 5/9, 1)  # Convert back to Celsius
         else:
             hi = t
         def heat_label(hi):
