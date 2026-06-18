@@ -695,52 +695,41 @@ def fetch_city_comparison(lat1: float, lon1: float, lat2: float, lon2: float, ci
 # YEAR-OVER-YEAR COMPARISON
 # ============================================
 def fetch_year_comparison(latitude: float, longitude: float):
-    """Compare 2024 vs 2025 vs 2026 temperatures month by month"""
-    from datetime import datetime
-    import time as time_module
-    url = "https://power.larc.nasa.gov/api/temporal/monthly/point"
-    results = {}
-    for year in [2024, 2025, 2026]:
-        params = {
-            "parameters": "T2M",
-            "community": "RE",
-            "longitude": longitude,
-            "latitude": latitude,
-            "start": f"{year}01",
-            "end": f"{year}12",
-            "format": "JSON"
-        }
+    """Compare 2024 vs 2025 vs 2026 using daily historical data"""
+    hist = fetch_historical_temperature(latitude, longitude, years=3)
+    records = hist.get("data", [])
+    if not records:
+        return {"error": "No data"}
+    monthly = {2024: {}, 2025: {}, 2026: {}}
+    for r in records:
+        date_str = str(r["date"])
+        if len(date_str) < 6:
+            continue
         try:
-            r = requests.get(url, params=params, timeout=20)
-            r.raise_for_status()
-            data = r.json()
-            monthly = data["properties"]["parameter"]["T2M"]
-            results[year] = [
-                {"month": int(k[4:6]), "temp": round(v, 2)}
-                for k, v in monthly.items()
-                if v != -999.0
-            ]
-            time_module.sleep(0.5)
-        except Exception as e:
-            results[year] = []
-    months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+            year = int(date_str[:4])
+            month = int(date_str[4:6])
+            temp = r["avg_temp"]
+            if year in monthly:
+                if month not in monthly[year]:
+                    monthly[year][month] = []
+                monthly[year][month].append(temp)
+        except:
+            continue
+    month_names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     chart_data = []
     for m in range(1, 13):
-        row = {"month": months[m-1]}
+        row = {"month": month_names[m-1]}
         for year in [2024, 2025, 2026]:
-            val = next((x["temp"] for x in results.get(year,[]) if x["month"]==m), None)
-            row[str(year)] = val
+            vals = monthly[year].get(m, [])
+            row[str(year)] = round(sum(vals)/len(vals), 1) if vals else None
         chart_data.append(row)
     return {
         "chart_data": chart_data,
         "years": [2024, 2025, 2026],
-        "location": {"lat": latitude, "lon": longitude}
+        "location": {"lat": latitude, "lon": longitude},
+        "source": "NASA POWER daily reanalysis"
     }
 
-
-# ============================================
-# ANOMALY HEATMAP CALENDAR
-# ============================================
 def fetch_anomaly_calendar(latitude: float, longitude: float):
     """Github-style heatmap of temperature anomalies"""
     hist = fetch_historical_temperature(latitude, longitude, years=2)
