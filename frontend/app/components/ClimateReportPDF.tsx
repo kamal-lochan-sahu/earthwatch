@@ -47,7 +47,7 @@ ${tipping.tipping_points?.map((t: any) => `<tr><td>${t.name}</td><td>${t.current
       const a = document.createElement("a");
       a.href = url; a.download = `earthwatch_report_${city}_${Date.now()}.html`;
       a.click(); URL.revokeObjectURL(url);
-    } catch (e) { alert("Report generation failed!"); }
+    } catch { alert("Report generation failed!"); }
     finally { setLoading(false); }
   };
   return (
