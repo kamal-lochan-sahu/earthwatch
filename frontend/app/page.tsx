@@ -10,6 +10,14 @@ import ArcticIce from "./components/ArcticIce";
 import SeasonalChart from "./components/SeasonalChart";
 import CorrelationMatrix from "./components/CorrelationMatrix";
 import AirQuality from "./components/AirQuality";
+import HeatIndex from "./components/HeatIndex";
+import TippingPoints from "./components/TippingPoints";
+import CityComparison from "./components/CityComparison";
+import YearComparison from "./components/YearComparison";
+import AnomalyCalendar from "./components/AnomalyCalendar";
+import ForecastChart from "./components/ForecastChart";
+import ApiHealthDashboard from "./components/ApiHealthDashboard";
+import ClimateReportPDF from "./components/ClimateReportPDF";
 import { translations, REGION_LANGUAGE_MAP } from "./translations";
 
 const GlobeView = dynamic(() => import("./components/GlobeView"), {
@@ -513,6 +521,14 @@ export default function Home() {
           <SeasonalChart />
           <CorrelationMatrix />
           <CSVExport />
+          <ForecastChart lat={28.61} lon={77.21} city="Delhi" />
+          <HeatIndex lat={28.61} lon={77.21} city="Delhi" />
+          <TippingPoints />
+          <CityComparison />
+          <YearComparison />
+          <AnomalyCalendar />
+          <ClimateReportPDF />
+          <ApiHealthDashboard />
         </div>
 
       </div>
