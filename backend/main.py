@@ -229,6 +229,8 @@ def get_city_comparison(
     city1: str = Query(default="Delhi"),
     city2: str = Query(default="Mumbai")
 ):
+    validate_coords(lat1, lon1)
+    validate_coords(lat2, lon2)
     from data.fetcher import fetch_city_comparison
     return fetch_city_comparison(lat1, lon1, lat2, lon2, city1, city2)
 
