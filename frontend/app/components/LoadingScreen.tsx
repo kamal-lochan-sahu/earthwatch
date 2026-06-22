@@ -8,6 +8,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
   // phase 2 = subtitle appear
   // phase 3 = fade out
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 800);
     const t2 = setTimeout(() => setPhase(2), 1800);
