@@ -73,6 +73,7 @@ def get_anomalies(
     lat: float = Query(default=28.61, description="Latitude"),
     lon: float = Query(default=77.21, description="Longitude")
 ):
+    validate_coords(lat, lon)
     historical_data = fetch_historical_temperature(lat, lon, years=2)
     data_records = historical_data.get("data", [])
     temperatures = [record["avg_temp"] for record in data_records]
@@ -104,6 +105,7 @@ def get_trends(
     lon: float = Query(default=77.21, description="Longitude"),
     years: int = Query(default=2, description="Number of years")
 ):
+    validate_coords(lat, lon, years)
     historical_data = fetch_historical_temperature(lat, lon, years)
     data_records = historical_data.get("data", [])
 
@@ -165,6 +167,7 @@ def get_seasonal(
     lon: float = Query(default=77.21, description="Longitude")
 ):
     """Seasonal decomposition: trend + seasonality + residual"""
+    validate_coords(lat, lon)
     from data.fetcher import fetch_seasonal_decomposition
     return fetch_seasonal_decomposition(lat, lon)
 
@@ -182,6 +185,7 @@ def get_air_quality(
     lon: float = Query(default=77.21, description="Longitude")
 ):
     """Real-time Air Quality Index from Open-Meteo"""
+    validate_coords(lat, lon)
     from data.fetcher import fetch_air_quality
     return fetch_air_quality(lat, lon)
 
@@ -212,6 +216,7 @@ def get_uv_solar(
     lat: float = Query(default=28.61),
     lon: float = Query(default=77.21)
 ):
+    validate_coords(lat, lon)
     from data.fetcher import fetch_uv_solar
     return fetch_uv_solar(lat, lon)
 
@@ -232,6 +237,7 @@ def get_year_comparison(
     lat: float = Query(default=28.61),
     lon: float = Query(default=77.21)
 ):
+    validate_coords(lat, lon)
     from data.fetcher import fetch_year_comparison
     return fetch_year_comparison(lat, lon)
 
@@ -240,6 +246,7 @@ def get_anomaly_calendar(
     lat: float = Query(default=28.61),
     lon: float = Query(default=77.21)
 ):
+    validate_coords(lat, lon)
     from data.fetcher import fetch_anomaly_calendar
     return fetch_anomaly_calendar(lat, lon)
 
@@ -248,6 +255,7 @@ def get_forecast(
     lat: float = Query(default=28.61),
     lon: float = Query(default=77.21)
 ):
+    validate_coords(lat, lon)
     from data.fetcher import fetch_temperature_forecast
     return fetch_temperature_forecast(lat, lon)
 

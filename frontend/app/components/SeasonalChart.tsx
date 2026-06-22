@@ -18,7 +18,7 @@ export default function SeasonalChart() {
     { key: "seasonal", label: "Seasonal", color: "#4ade80" },
     { key: "residual", label: "Residual", color: "#facc15" },
   ];
-  const series: number[] = (data[active] || []).filter((v: any) => v !== null);
+  // const series: number[] = (data[active] || []).filter((v: any) => v !== null);
   const dates = data.dates || [];
   const allSeries: number[] = (data[active] || []).map((v: any) => v ?? 0);
   const validVals = allSeries.filter(v => v !== 0);
