@@ -62,7 +62,10 @@ def get_historical(
     lon: float = Query(default=77.21, description="Longitude"),
     years: int = Query(default=2, description="Number of years")
 ):
+    validate_coords(lat, lon, years)
     data = fetch_historical_temperature(lat, lon, years)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=data["error"])
     return data
 
 @app.get("/api/anomalies")
@@ -134,8 +137,12 @@ def export_csv(
     years: int = Query(default=2, description="Years of data")
 ):
     """Download historical temperature data as JSON (frontend converts to CSV)"""
+    validate_coords(lat, lon, years)
     from data.fetcher import fetch_csv_export
-    return fetch_csv_export(lat, lon, years)
+    data = fetch_csv_export(lat, lon, years)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=data["error"])
+    return data
 
 
 @app.get("/api/climate-index")
@@ -188,8 +195,12 @@ def get_heat_index(
     lat: float = Query(default=28.61),
     lon: float = Query(default=77.21)
 ):
+    validate_coords(lat, lon)
     from data.fetcher import fetch_heat_index
-    return fetch_heat_index(lat, lon)
+    data = fetch_heat_index(lat, lon)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=data["error"])
+    return data
 
 @app.get("/api/tipping-points")
 def get_tipping_points():

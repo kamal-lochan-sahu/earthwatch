@@ -90,7 +90,7 @@ export default function Home() {
           setRegionalLang(REGION_LANGUAGE_MAP[countryCode]);
         }
       } catch {
-        console.error("Region detection failed:", e);
+        console.error("Region detection failed:");
       }
     }
     detectRegion();
@@ -108,7 +108,7 @@ export default function Home() {
         setTemperature(await tempRes.json());
         setAnomaly(await anomalyRes.json());
       } catch {
-        console.error("Temp error:", e);
+        console.error("Temp error:");
       } finally {
         setLoadingTemp(false);
       }
@@ -118,7 +118,7 @@ export default function Home() {
         const res = await fetch(`${API}/api/co2`);
         setCo2(await res.json());
       } catch {
-        console.error("CO2 error:", e);
+        console.error("CO2 error:");
       } finally {
         setLoadingCo2(false);
       }
@@ -129,7 +129,7 @@ export default function Home() {
         const data = await res.json();
         setCities(data.cities || []);
       } catch {
-        console.error("Cities error:", e);
+        console.error("Cities error:");
       } finally {
         setLoadingCities(false);
       }
@@ -140,7 +140,7 @@ export default function Home() {
         const data = await res.json();
         setEvents(data.events || []);
       } catch {
-        console.error("Events error:", e);
+        console.error("Events error:");
       } finally {
         setLoadingEvents(false);
       }
@@ -150,7 +150,7 @@ export default function Home() {
         const res = await fetch(`${API}/api/trends`);
         setTrends(await res.json());
       } catch {
-        console.error("Trends error:", e);
+        console.error("Trends error:");
       } finally {
         setLoadingTrends(false);
       }
