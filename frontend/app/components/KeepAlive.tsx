@@ -11,7 +11,11 @@ export default function KeepAlive() {
     try {
       pingCountRef.current += 1;
       const res = await fetch("https://earthwatch.onrender.com/health", { cache: "no-store" });
-      console.log(`[KeepAlive] Ping #${pingCountRef.current} — ${new Date().toLocaleTimeString()}`);
+      if (!res.ok) {
+        console.warn(`[KeepAlive] Ping #${pingCountRef.current} returned ${res.status}`);
+      } else {
+        console.log(`[KeepAlive] Ping #${pingCountRef.current} — ${new Date().toLocaleTimeString()}`);
+      }
     } catch (err) {
       console.warn("[KeepAlive] Ping failed:", err);
     }

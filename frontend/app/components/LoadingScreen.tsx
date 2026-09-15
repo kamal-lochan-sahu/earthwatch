@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function LoadingScreen({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState(0);
@@ -8,12 +8,20 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
   // phase 2 = subtitle appear
   // phase 3 = fade out
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Keep the latest onComplete in a ref so the timer effect below can stay
+  // mount-only ([]) without lying to the exhaustive-deps rule: if a parent
+  // passes a fresh onComplete each render, we still call the latest one
+  // without resetting the timers.
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 800);
     const t2 = setTimeout(() => setPhase(2), 1800);
     const t3 = setTimeout(() => setPhase(3), 2800);
-    const t4 = setTimeout(() => onComplete(), 3600);
+    const t4 = setTimeout(() => onCompleteRef.current(), 3600);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
