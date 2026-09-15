@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import time
 from datetime import datetime, timedelta
+from data.cache import ttl_cache
 
 # ============================================
 # OPEN-METEO API — Live Weather Data Fetcher
@@ -49,6 +50,12 @@ def fetch_live_temperature(latitude: float, longitude: float):
 # NASA POWER API — Historical Climate Data
 # ============================================
 
+def _historical_cache_key(latitude, longitude, years=5):
+    # round to ~1km so nearby map clicks share a cache entry
+    return (round(latitude, 2), round(longitude, 2), years)
+
+
+@ttl_cache(ttl_seconds=600, key_fn=_historical_cache_key)
 def fetch_historical_temperature(latitude: float, longitude: float, years: int = 5):
     url = "https://power.larc.nasa.gov/api/temporal/daily/point"
     end_date = datetime.now()
