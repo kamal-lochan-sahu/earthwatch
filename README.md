@@ -2,7 +2,7 @@
 ### Real-Time Climate Anomaly Detection & Environmental Intelligence Platform
 
 ![Status](https://img.shields.io/badge/Status-Live-green)
-![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![ML](https://img.shields.io/badge/ML-Isolation%20Forest-purple)
 ![PWA](https://img.shields.io/badge/PWA-Enabled-orange)
@@ -37,7 +37,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, Globe.gl |
-| Backend | FastAPI, Python 3.12, Uvicorn |
+| Backend | FastAPI, Python 3.11, Uvicorn |
 | ML | Scikit-learn (Isolation Forest), SciPy (Linear Regression) |
 | Data Sources | NASA POWER, Open-Meteo, NOAA CO2, GDACS Events |
 | Deploy | Vercel (Frontend), Render (Backend) |
@@ -78,14 +78,30 @@ German, French, Japanese, Spanish, Arabic, Portuguese, Chinese, Korean, Italian,
 | Endpoint | Description |
 |----------|-------------|
 | `GET /` | API info |
-| `GET /health` | Health check |
+| `GET /health` | Health check (also used by the frontend keep-alive ping) |
 | `GET /api/temperature` | Live temperature (Open-Meteo) |
-| `GET /api/temperature/global` | 9 major cities live data |
-| `GET /api/historical` | NASA POWER historical data |
-| `GET /api/anomalies` | ML anomaly detection |
-| `GET /api/trends` | Climate trend analysis |
-| `GET /api/co2` | Live CO2 from NOAA |
-| `GET /api/events` | Live disaster events from GDACS |
+| `GET /api/temperature/global` | 9 major cities — live data |
+| `GET /api/historical` | Historical temperature (NASA POWER, cached 10 min) |
+| `GET /api/anomalies` | ML anomaly detection (Isolation Forest + Z-Score) |
+| `GET /api/trends` | Warming/cooling trend analysis (SciPy linear regression) |
+| `GET /api/co2` | Live CO2 concentration (NOAA Mauna Loa) |
+| `GET /api/events` | Live extreme weather events (ReliefWeb) |
+| `GET /api/export/csv` | Historical data export (JSON; frontend converts to CSV) |
+| `GET /api/climate-index` | El Niño / La Niña detection (NOAA ONI Index) |
+| `GET /api/arctic-ice` | Arctic sea ice extent (NSIDC) |
+| `GET /api/seasonal` | Seasonal decomposition — trend + seasonality + residual |
+| `GET /api/correlation` | Correlation matrix — CO2 vs temperature vs sea level |
+| `GET /api/air-quality` | Real-time air quality index (Open-Meteo) |
+| `GET /api/heat-index` | Heat index calculation |
+| `GET /api/tipping-points` | Climate tipping-point indicators |
+| `GET /api/uv-solar` | UV index and solar radiation |
+| `GET /api/compare-cities` | Side-by-side climate comparison of two cities |
+| `GET /api/year-comparison` | Year-over-year temperature comparison |
+| `GET /api/anomaly-calendar` | Calendar view of temperature anomalies |
+| `GET /api/forecast` | Temperature forecast |
+| `GET /api/health-dashboard` | Upstream API status dashboard |
+
+Full interactive docs (request/response schemas): https://earthwatch.onrender.com/docs
 
 ---
 
@@ -114,7 +130,7 @@ German, French, Japanese, Spanish, Arabic, Portuguese, Chinese, Korean, Italian,
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
