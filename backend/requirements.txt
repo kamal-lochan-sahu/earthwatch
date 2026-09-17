@@ -4,6 +4,7 @@ requests==2.32.3
 pandas==2.2.2
 numpy==1.26.4
 scikit-learn==1.5.1
+scipy==1.17.1
 statsmodels==0.14.2
 python-dateutil==2.9.0
 tzdata==2024.1
