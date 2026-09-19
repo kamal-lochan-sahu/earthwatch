@@ -8,41 +8,55 @@ from data.cache import ttl_cache
 # OPEN-METEO API — Live Weather Data Fetcher
 # ============================================
 
-def fetch_live_temperature(latitude: float, longitude: float):
+def _open_meteo_cache_key(latitude, longitude):
+    # round to ~1km so nearby requests (map clicks, city presets) share a cache entry
+    return (round(latitude, 2), round(longitude, 2))
+
+
+@ttl_cache(ttl_seconds=300, key_fn=_open_meteo_cache_key)
+def fetch_open_meteo_current(latitude: float, longitude: float):
+    """
+    One shared, cached call to Open-Meteo carrying every hourly/daily/current
+    variable used across live temperature, heat index, and UV/solar — so
+    those three features share a single upstream request per location every
+    5 minutes instead of each firing its own call on every page view (and
+    9x more for the globe's city list).
+    """
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m",
+        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,weather_code",
+        "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m,apparent_temperature,"
+                  "uv_index,uv_index_clear_sky,shortwave_radiation,direct_radiation,"
+                  "precipitation_probability,weather_code",
+        "daily": "uv_index_max,sunrise,sunset",
         "timezone": "auto",
-        "forecast_days": 1
+        "forecast_days": 3,
     }
     try:
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-        data = response.json()
-        df = pd.DataFrame({
-            "time": data["hourly"]["time"],
-            "temperature": data["hourly"]["temperature_2m"],
-            "humidity": data["hourly"]["relative_humidity_2m"],
-            "wind_speed": data["hourly"]["wind_speed_10m"]
-        })
-        current_hour = datetime.now().strftime("%Y-%m-%dT%H:00")
-        current_data = df[df["time"] == current_hour]
-        if current_data.empty:
-            current_data = df.iloc[-1]
-        else:
-            current_data = current_data.iloc[0]
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def fetch_live_temperature(latitude: float, longitude: float):
+    data = fetch_open_meteo_current(latitude, longitude)
+    if "error" in data:
+        return data
+    try:
+        current = data["current"]
         return {
             "latitude": latitude,
             "longitude": longitude,
-            "current_temperature": float(current_data["temperature"]),
-            "current_humidity": float(current_data["humidity"]),
-            "current_wind_speed": float(current_data["wind_speed"]),
-            "timestamp": current_hour,
-            "hourly_data": df.to_dict(orient="records")
+            "current_temperature": float(current["temperature_2m"]),
+            "current_humidity": float(current["relative_humidity_2m"]),
+            "current_wind_speed": float(current["wind_speed_10m"]),
+            "timestamp": current["time"],
         }
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return {"error": str(e)}
 
 
@@ -119,6 +133,7 @@ MAJOR_CITIES = [
     {"name": "Bhubaneswar", "lat": 20.30, "lon": 85.82},
 ]
 
+@ttl_cache(ttl_seconds=600)
 def fetch_global_temperature():
     results = []
     for city in MAJOR_CITIES:
@@ -429,6 +444,11 @@ def fetch_correlation_data():
 # AIR QUALITY INDEX — Open-Meteo Air Quality
 # ============================================
 
+def _air_quality_cache_key(latitude, longitude):
+    return (round(latitude, 2), round(longitude, 2))
+
+
+@ttl_cache(ttl_seconds=300, key_fn=_air_quality_cache_key)
 def fetch_air_quality(latitude: float, longitude: float):
     """Real-time AQI from Open-Meteo Air Quality API"""
     url = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -484,16 +504,11 @@ def fetch_air_quality(latitude: float, longitude: float):
 # ============================================
 def fetch_heat_index(latitude: float, longitude: float):
     """Heat index = feels-like temp combining temp + humidity"""
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-        "latitude": latitude, "longitude": longitude,
-        "hourly": "temperature_2m,relative_humidity_2m,apparent_temperature,uv_index,precipitation_probability,weathercode",
-        "timezone": "auto", "forecast_days": 1
-    }
+    data = fetch_open_meteo_current(latitude, longitude)
+    if "error" in data:
+        return data
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        current = data["current"]
         hourly = data["hourly"]
         times = hourly["time"]
         temps = hourly["temperature_2m"]
@@ -501,11 +516,9 @@ def fetch_heat_index(latitude: float, longitude: float):
         apparent = hourly["apparent_temperature"]
         uv = hourly.get("uv_index", [0]*len(times))
         precip_prob = hourly.get("precipitation_probability", [0]*len(times))
-        weathercode = hourly.get("weathercode", [0]*len(times))
-        from datetime import datetime
-        current_hour = datetime.now().strftime("%Y-%m-%dT%H:00")
-        idx = next((i for i, t in enumerate(times) if t == current_hour), -1)
-        if idx == -1: idx = len(times) // 2
+        weathercode = hourly.get("weather_code", [0]*len(times))
+        current_time = current["time"]
+        idx = next((i for i, t in enumerate(times) if t == current_time), len(times) // 2)
         t = temps[idx]
         h = humidity[idx]
         # Rothfusz heat index formula (requires Fahrenheit input)
@@ -546,7 +559,7 @@ def fetch_heat_index(latitude: float, longitude: float):
             "hourly_forecast": [
                 {"time": times[i], "temp": temps[i], "humidity": humidity[i],
                  "apparent": apparent[i], "uv": uv[i], "precip_prob": precip_prob[i]}
-                for i in range(len(times))
+                for i in range(min(24, len(times)))
             ]
         }
     except Exception as e:
@@ -617,25 +630,18 @@ def fetch_tipping_points():
 # ============================================
 def fetch_uv_solar(latitude: float, longitude: float):
     """UV index and solar radiation from Open-Meteo"""
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-        "latitude": latitude, "longitude": longitude,
-        "hourly": "uv_index,uv_index_clear_sky,shortwave_radiation,direct_radiation",
-        "daily": "uv_index_max,sunrise,sunset",
-        "timezone": "auto", "forecast_days": 3
-    }
+    data = fetch_open_meteo_current(latitude, longitude)
+    if "error" in data:
+        return data
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        current = data["current"]
         hourly = data["hourly"]
         daily = data["daily"]
-        from datetime import datetime
-        current_hour = datetime.now().strftime("%Y-%m-%dT%H:00")
         times = hourly["time"]
         uv_vals = hourly["uv_index"]
         radiation = hourly.get("shortwave_radiation", [])
-        idx = next((i for i, t in enumerate(times) if t == current_hour), 0)
+        current_time = current["time"]
+        idx = next((i for i, t in enumerate(times) if t == current_time), 0)
         current_uv = uv_vals[idx] if idx < len(uv_vals) else 0
         def uv_advice(uv):
             if uv >= 11: return "Stay indoors, extreme risk of harm", "purple"
