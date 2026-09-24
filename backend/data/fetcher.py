@@ -13,14 +13,19 @@ def _open_meteo_cache_key(latitude, longitude):
     return (round(latitude, 2), round(longitude, 2))
 
 
-@ttl_cache(ttl_seconds=300, key_fn=_open_meteo_cache_key)
+@ttl_cache(ttl_seconds=900, key_fn=_open_meteo_cache_key)
 def fetch_open_meteo_current(latitude: float, longitude: float):
     """
     One shared, cached call to Open-Meteo carrying every hourly/daily/current
     variable used across live temperature, heat index, and UV/solar — so
     those three features share a single upstream request per location every
-    5 minutes instead of each firing its own call on every page view (and
-    9x more for the globe's city list).
+    15 minutes instead of each firing its own call on every page view (and
+    9x more for the globe's city list). Retries once on a 429 (Open-Meteo's
+    rate limit is IP-based, and free-tier hosts like Render share outbound
+    IPs across many unrelated apps, so a 429 can be caused by traffic that
+    isn't even ours). If both attempts fail, the ttl_cache wrapper falls
+    back to the last known-good value for this location rather than
+    blanking the widget out.
     """
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
@@ -34,12 +39,18 @@ def fetch_open_meteo_current(latitude: float, longitude: float):
         "timezone": "auto",
         "forecast_days": 3,
     }
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}
+    last_error = None
+    for attempt in range(2):
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code == 429 and attempt == 0:
+                time.sleep(2)
+                continue
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            last_error = e
+    return {"error": str(last_error)}
 
 
 def fetch_live_temperature(latitude: float, longitude: float):
@@ -133,7 +144,7 @@ MAJOR_CITIES = [
     {"name": "Bhubaneswar", "lat": 20.30, "lon": 85.82},
 ]
 
-@ttl_cache(ttl_seconds=600)
+@ttl_cache(ttl_seconds=900)
 def fetch_global_temperature():
     results = []
     for city in MAJOR_CITIES:
@@ -202,6 +213,7 @@ def fetch_co2_data():
 # GDACS — Extreme Weather Events
 # ============================================
 
+@ttl_cache(ttl_seconds=900)
 def fetch_weather_events():
     url = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
     params = {
@@ -448,7 +460,7 @@ def _air_quality_cache_key(latitude, longitude):
     return (round(latitude, 2), round(longitude, 2))
 
 
-@ttl_cache(ttl_seconds=300, key_fn=_air_quality_cache_key)
+@ttl_cache(ttl_seconds=900, key_fn=_air_quality_cache_key)
 def fetch_air_quality(latitude: float, longitude: float):
     """Real-time AQI from Open-Meteo Air Quality API"""
     url = "https://air-quality-api.open-meteo.com/v1/air-quality"

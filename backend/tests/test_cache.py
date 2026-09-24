@@ -55,3 +55,39 @@ def test_cache_expires_after_ttl(monkeypatch):
     fake_time["t"] += 10  # advance past the TTL
     add(1, 2)
     assert calls["n"] == 2
+
+
+def test_stale_value_served_when_fresh_call_errors(monkeypatch):
+    """
+    A prior successful value should be served instead of a fresh error,
+    even past its TTL — this is what keeps widgets populated when an
+    upstream API (like a rate-limited Open-Meteo) temporarily 429s.
+    """
+    calls = {"n": 0}
+    fake_time = {"t": 1000.0}
+    monkeypatch.setattr(cache_module.time, "time", lambda: fake_time["t"])
+
+    responses = iter([42, {"error": "rate limited"}])
+
+    @ttl_cache(ttl_seconds=5)
+    def flaky():
+        calls["n"] += 1
+        return next(responses)
+
+    assert flaky() == 42  # first call succeeds, gets cached
+    fake_time["t"] += 10  # advance past the TTL
+    assert flaky() == 42  # second call errors, but stale value is served
+    assert calls["n"] == 2  # the function WAS called again (not just cache hit)
+
+
+def test_stale_ok_false_returns_the_error_instead():
+    calls = {"n": 0}
+    responses = iter([42, {"error": "rate limited"}])
+
+    @ttl_cache(ttl_seconds=0, stale_ok=False)
+    def flaky():
+        calls["n"] += 1
+        return next(responses)
+
+    assert flaky() == 42
+    assert flaky() == {"error": "rate limited"}

@@ -1,5 +1,5 @@
 """
-EarthWatch — in-memory TTL cache for slow external API calls (NASA POWER etc.)
+EarthWatch — in-memory TTL cache for slow/rate-limited external API calls.
 Thread-safe, process-local. Not shared across multiple worker processes —
 that's a fine tradeoff for a single-instance Render deployment.
 """
@@ -10,12 +10,19 @@ _lock = threading.Lock()
 _store = {}
 
 
-def ttl_cache(ttl_seconds=600, key_fn=None):
+def ttl_cache(ttl_seconds=600, key_fn=None, stale_ok=True):
     """
     Decorator that caches a function's return value for ttl_seconds.
     - key_fn(*args, **kwargs) -> hashable key. Defaults to raw args/kwargs.
-    - Results that look like {"error": ...} are never cached, so a transient
-      upstream failure doesn't get stuck for the full TTL.
+    - Results that look like {"error": ...} are never cached as the "good"
+      value, so a transient upstream failure doesn't get stuck for the
+      full TTL.
+    - stale_ok (default True): if a fresh call errors but we have an
+      earlier successful result for this key (even if its TTL has since
+      expired), serve that stale value instead of the error. This matters
+      for upstream APIs with shared/IP-based rate limits (e.g. Open-Meteo
+      on a shared Render IP): a temporary 429 shouldn't blank out a widget
+      that already has real data to show.
     """
     def decorator(func):
         def wrapper(*args, **kwargs):
@@ -30,9 +37,13 @@ def ttl_cache(ttl_seconds=600, key_fn=None):
 
             result = func(*args, **kwargs)
 
-            if not (isinstance(result, dict) and "error" in result):
-                with _lock:
-                    _store[cache_key] = (now, result)
+            if isinstance(result, dict) and "error" in result:
+                if stale_ok and cached:
+                    return cached[1]
+                return result
+
+            with _lock:
+                _store[cache_key] = (now, result)
 
             return result
         wrapper.__name__ = func.__name__
