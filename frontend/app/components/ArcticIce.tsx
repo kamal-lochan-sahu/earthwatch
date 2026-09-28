@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const API = "https://earthwatch.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch.onrender.com";
 
 export default function ArcticIce() {
   const [data, setData] = useState<any>(null);

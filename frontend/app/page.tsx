@@ -29,7 +29,7 @@ const GlobeView = dynamic(() => import("./components/GlobeView"), {
   ),
 });
 
-const API = "https://earthwatch.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch.onrender.com";
 
 interface WeatherEvent {
   title: string;

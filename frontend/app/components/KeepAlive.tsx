@@ -10,7 +10,8 @@ export default function KeepAlive() {
   const pingBackend = async () => {
     try {
       pingCountRef.current += 1;
-      const res = await fetch("https://earthwatch.onrender.com/health", { cache: "no-store" });
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch.onrender.com";
+      const res = await fetch(`${apiBase}/health`, { cache: "no-store" });
       if (!res.ok) {
         console.warn(`[KeepAlive] Ping #${pingCountRef.current} returned ${res.status}`);
       } else {
