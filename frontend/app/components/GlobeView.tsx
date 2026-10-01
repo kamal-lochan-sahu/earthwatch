@@ -55,11 +55,18 @@ export default function GlobeView({ cities }: GlobeViewProps) {
         .labelText("city")
         .labelSize(1.2)
         .labelColor(() => "white")
-        .labelDotRadius(0.3);
-
-      // Auto rotate
-      globe.controls().autoRotate = true;
-      globe.controls().autoRotateSpeed = 0.8;
+        .labelDotRadius(0.3)
+        .onGlobeReady(() => {
+          // controls() only exists once the renderer has actually mounted —
+          // calling this synchronously right after building the globe threw
+          // "Cannot set properties of undefined (setting 'autoRotate')" and
+          // aborted init before anything rendered.
+          const controls = globe.controls();
+          if (controls) {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.8;
+          }
+        });
     };
 
     initGlobe();
