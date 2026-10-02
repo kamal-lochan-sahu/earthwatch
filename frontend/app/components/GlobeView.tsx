@@ -45,7 +45,7 @@ export default function GlobeView({ cities }: GlobeViewProps) {
         if (cancelled) return;
         el.innerHTML = "";
 
-        globe = (Globe as any)(el)
+        globe = (Globe as any)()(el)
           .width(el.offsetWidth || 800)
           .height(500)
           .backgroundColor("#0a0a0f")
