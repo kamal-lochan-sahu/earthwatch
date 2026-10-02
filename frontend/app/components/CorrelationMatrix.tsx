@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch-backend-nx4u.onrender.com";
 
 export default function CorrelationMatrix() {
   const [data, setData] = useState<any>(null);

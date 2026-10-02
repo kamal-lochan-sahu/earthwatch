@@ -1,4 +1,40 @@
-"use client";
+#!/usr/bin/env python3
+"""EarthWatch fix: health dashboard (stale hardcoded backend URL) + globe hardening.
+Run from the repo root:  python3 fix_earthwatch.py
+"""
+import pathlib, re, sys
+
+root = pathlib.Path.cwd()
+OLD = "https://earthwatch.onrender.com"
+NEW = "https://earthwatch-backend-nx4u.onrender.com"
+
+# 1) Backend health check: stop pinging the deleted old Render backend
+f = root / "backend/data/fetcher.py"
+s = f.read_text(encoding="utf-8")
+old_line = f'    base = "{OLD}"\n'
+new_block = (
+    '    import os\n'
+    '    # Ping ourselves (this very server). Override with HEALTH_BASE_URL if needed.\n'
+    '    base = os.environ.get("HEALTH_BASE_URL") or f"http://127.0.0.1:{os.environ.get(\'PORT\', \'8000\')}"\n'
+)
+if old_line not in s:
+    sys.exit("fetcher.py: expected base line not found (already patched?)")
+f.write_text(s.replace(old_line, new_block, 1), encoding="utf-8")
+print("patched backend/data/fetcher.py")
+
+# 2) Frontend fallback URL -> new backend (env var still wins)
+n = 0
+for p in (root / "frontend/app").rglob("*"):
+    if p.suffix in (".ts", ".tsx") and p.is_file():
+        t = p.read_text(encoding="utf-8")
+        if OLD in t:
+            p.write_text(t.replace(OLD, NEW), encoding="utf-8")
+            n += 1
+print(f"updated fallback URL in {n} frontend files")
+
+# 3) GlobeView: visible WebGL check, no double-init race, real error logging
+g = root / "frontend/app/components/GlobeView.tsx"
+g.write_text('''"use client";
 import { useEffect, useRef, useState } from "react";
 
 interface City {
@@ -123,3 +159,6 @@ export default function GlobeView({ cities }: GlobeViewProps) {
     </div>
   );
 }
+''', encoding="utf-8")
+print("rewrote frontend/app/components/GlobeView.tsx")
+print("\nDone. Now: git add -A && git commit -m 'fix: health check self-ping + stale backend URL; harden globe' && git push")

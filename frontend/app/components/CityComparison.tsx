@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch-backend-nx4u.onrender.com";
 export default function CityComparison() {
   const [city1, setCity1] = useState("Delhi");
   const [city2, setCity2] = useState("Mumbai");

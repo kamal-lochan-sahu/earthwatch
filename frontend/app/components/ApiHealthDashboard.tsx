@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://earthwatch-backend-nx4u.onrender.com";
 const EXTERNAL = ["/api/arctic-ice", "/api/temperature/global"];
 export default function ApiHealthDashboard() {
   const [data, setData] = useState<any>(null);

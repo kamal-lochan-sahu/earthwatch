@@ -864,7 +864,9 @@ def fetch_api_health():
         ("tipping_points", "/api/tipping-points"),
     ]
     results = []
-    base = "https://earthwatch.onrender.com"
+    import os
+    # Ping ourselves (this very server). Override with HEALTH_BASE_URL if needed.
+    base = os.environ.get("HEALTH_BASE_URL") or f"http://127.0.0.1:{os.environ.get('PORT', '8000')}"
     for name, path in endpoints:
         try:
             start = time_module.time()
