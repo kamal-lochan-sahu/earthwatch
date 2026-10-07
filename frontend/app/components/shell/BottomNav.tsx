@@ -1,11 +1,23 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { useAppState } from "../../context/AppState";
 import { TABS } from "./tabs";
 
 export default function BottomNav() {
   const { view, setView } = useAppState();
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--bottomnav-h", `${el.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
     <nav
+      ref={ref}
       aria-label="Views"
       className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/10 bg-[#05070d]/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >

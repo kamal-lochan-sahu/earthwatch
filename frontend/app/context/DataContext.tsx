@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { apiGet } from "../hooks/useApi";
+import { apiGet, apiGetShared } from "../hooks/useApi";
 
 export interface WeatherEvent {
   title: string;
@@ -68,7 +68,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
     async function fetchCities() {
       try {
-        const data = await apiGet("/api/temperature/global");
+        const data = await apiGetShared("/api/temperature/global");
         setCities(data.cities || []);
       } catch {
         console.error("Cities error:");

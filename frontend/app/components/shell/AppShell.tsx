@@ -31,19 +31,29 @@ function ActiveView() {
   }
 }
 
-export default function AppShell() {
+function ShellBody() {
+  const { view } = useAppState();
   const [showLoader, setShowLoader] = useState(true);
+  const mission = view === "mission";
+  return (
+    <>
+      {showLoader && <LoadingScreen onComplete={() => setShowLoader(false)} />}
+      <div className={`bg-[#05070d] text-white ${mission ? "h-dvh overflow-hidden" : "min-h-screen"}`}>
+        <TopBar />
+        <main className={mission ? "" : "pb-24 md:pb-8"}>
+          <ActiveView />
+        </main>
+        <BottomNav />
+      </div>
+    </>
+  );
+}
+
+export default function AppShell() {
   return (
     <AppStateProvider>
       <DataProvider>
-        {showLoader && <LoadingScreen onComplete={() => setShowLoader(false)} />}
-        <div className="min-h-screen bg-[#05070d] text-white">
-          <TopBar />
-          <main className="pb-24 md:pb-8">
-            <ActiveView />
-          </main>
-          <BottomNav />
-        </div>
+        <ShellBody />
       </DataProvider>
     </AppStateProvider>
   );

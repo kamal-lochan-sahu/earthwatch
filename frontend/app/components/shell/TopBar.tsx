@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppState } from "../../context/AppState";
 import { useData } from "../../context/DataContext";
 import LanguageToggle from "../LanguageToggle";
@@ -9,9 +9,22 @@ export default function TopBar() {
   const {
     view, setView, openCity, isFahrenheit, toggleUnits,
     currentLang, setCurrentLang, regionalLang, t,
+    mapMode, canWebGL, setFlat,
   } = useAppState();
   const { temperature, co2 } = useData();
   const [query, setQuery] = useState("");
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Publish the header height so full-screen views (Mission) can sit right under it.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--topbar-h", `${el.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +48,8 @@ export default function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#05070d]/80 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 md:px-6">
+    <header ref={headerRef} className="sticky top-0 z-40 border-b border-white/10 bg-[#05070d]/80 backdrop-blur">
+      <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 md:px-6">
         <button
           onClick={() => setView("mission")}
           className="flex items-center gap-2 text-xl font-bold text-green-400"
@@ -66,7 +79,7 @@ export default function TopBar() {
         <form
           onSubmit={submitSearch}
           role="search"
-          className="order-last w-full md:order-none md:ml-auto md:w-64"
+          className="order-last w-full md:order-none md:ml-auto md:w-56"
         >
           <input
             type="text"
@@ -79,6 +92,26 @@ export default function TopBar() {
         </form>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
+          {view === "mission" && (
+            <div role="group" aria-label="Map type" className="flex rounded-full border border-gray-700 bg-gray-800 p-0.5 text-sm font-bold">
+              <button
+                onClick={() => setFlat(false)}
+                disabled={canWebGL === false}
+                aria-pressed={mapMode === "3d"}
+                title={canWebGL === false ? t.webglMissing : undefined}
+                className={`rounded-full px-3 py-1.5 ${mapMode === "3d" ? "bg-green-400/20 text-green-400" : "text-gray-400"} disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                🌍<span className="hidden xl:inline"> {t.mapGlobe}</span>
+              </button>
+              <button
+                onClick={() => setFlat(true)}
+                aria-pressed={mapMode === "2d"}
+                className={`rounded-full px-3 py-1.5 ${mapMode === "2d" ? "bg-green-400/20 text-green-400" : "text-gray-400"}`}
+              >
+                🗺️<span className="hidden xl:inline"> {t.mapFlat}</span>
+              </button>
+            </div>
+          )}
           <button
             onClick={toggleUnits}
             aria-label="Toggle temperature unit"
@@ -93,7 +126,7 @@ export default function TopBar() {
             aria-label={t.share}
             className="rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-bold text-gray-300 transition-all hover:border-green-500 hover:text-white"
           >
-            🔗<span className="hidden lg:inline"> {t.share}</span>
+            🔗<span className="hidden xl:inline"> {t.share}</span>
           </button>
           <LanguageToggle
             currentLang={currentLang}
