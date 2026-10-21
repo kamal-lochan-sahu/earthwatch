@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data, fetch_weather_events
+from data.hazards.earthquakes import build_earthquake_response, WINDOWS as EARTHQUAKE_WINDOWS
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -21,6 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 def validate_coords(lat: float, lon: float, years: int = None):
@@ -130,6 +133,24 @@ def get_co2():
 def get_events():
     """Extreme weather events from ReliefWeb"""
     data = fetch_weather_events()
+    return data
+
+@app.get("/api/earthquakes")
+def get_earthquakes(
+    window: str = Query("24h", description="Time window: 1h, 24h or 7d"),
+    min_mag: float = Query(2.5, description="Minimum magnitude (the USGS feed starts at 2.5)"),
+    region: str = Query(None, description="Only this region, e.g. Japan or California (see `regions` in the response)"),
+):
+    """Recent earthquakes from USGS (M2.5+, up to 7 days) plus 24h counters"""
+    if window not in EARTHQUAKE_WINDOWS:
+        raise HTTPException(status_code=400, detail="Window must be one of: 1h, 24h, 7d")
+    if not (0 <= min_mag <= 10):
+        raise HTTPException(status_code=400, detail="min_mag must be between 0 and 10")
+    if region is not None and len(region) > 80:
+        raise HTTPException(status_code=400, detail="Region must be at most 80 characters")
+    data = build_earthquake_response(window=window, min_mag=min_mag, region=region)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail="Earthquake data source (USGS) is temporarily unavailable")
     return data
 
 # ============================================

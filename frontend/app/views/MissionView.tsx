@@ -9,6 +9,7 @@ import { buildPoints } from "../components/mission/points";
 import LayerPanel from "../components/mission/LayerPanel";
 import DetailPanel from "../components/mission/DetailPanel";
 import StatChips from "../components/mission/StatChips";
+import Ticker, { layersHaveTicker } from "../components/mission/Ticker";
 
 const stageLoading = () => (
   <div className="absolute inset-0 flex items-center justify-center">
@@ -31,6 +32,7 @@ function Stage() {
   const [layersHidden, setLayersHidden] = useState(false); // desktop collapse
 
   const units = useMemo(() => ({ convertTemp, tempUnit }), [convertTemp, tempUnit]);
+  const hasTicker = layersHaveTicker(activeLayers);
   const selectedKey = selected ? `${selected.def.id}:${selected.item.id}` : "";
   const points = useMemo(
     () => buildPoints(activeLayers, states, selectedKey),
@@ -76,6 +78,7 @@ function Stage() {
             points={points}
             onSelect={onSelect}
             units={units}
+            reducedMotion={reduced}
             labels={{ zoomIn: t.zoomIn, zoomOut: t.zoomOut, zoomReset: t.zoomReset }}
           />
         ))}
@@ -94,7 +97,7 @@ function Stage() {
       <aside
         aria-label={t.layersTitle}
         className={`${GLASS} z-20 absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto rounded-t-2xl p-3
-          md:inset-x-auto md:bottom-auto md:left-3 md:top-3 md:max-h-[calc(100%-1.5rem)] md:w-64 md:rounded-2xl
+          md:inset-x-auto md:bottom-auto md:left-3 md:top-3 md:max-h-[calc(100%-4rem)] md:w-64 md:rounded-2xl
           ${mobileLayersOpen ? "block" : "hidden"} ${layersHidden ? "md:hidden" : "md:block"}`}
       >
         <button
@@ -108,7 +111,7 @@ function Stage() {
       </aside>
       <button
         onClick={() => setMobileLayersOpen(true)}
-        className={`${GLASS} absolute bottom-3 left-3 z-10 rounded-full px-4 py-2 text-sm font-semibold text-gray-100 md:hidden
+        className={`${GLASS} absolute ${hasTicker ? "bottom-11" : "bottom-3"} left-3 z-10 rounded-full px-4 py-2 text-sm font-semibold text-gray-100 md:hidden
           ${mobileLayersOpen || selected ? "hidden" : ""}`}
       >
         ☰ {t.layersTitle}
@@ -132,10 +135,12 @@ function Stage() {
 
       {/* Headline numbers: top strip on mobile, bottom-centre on desktop */}
       {!selected && (
-        <div className="absolute inset-x-3 top-12 z-10 md:inset-x-auto md:bottom-3 md:left-1/2 md:top-auto md:-translate-x-1/2">
+        <div className={`absolute inset-x-3 top-12 z-10 md:inset-x-auto ${hasTicker ? "md:bottom-12" : "md:bottom-3"} md:left-1/2 md:top-auto md:-translate-x-1/2`}>
           <StatChips />
         </div>
       )}
+
+      {hasTicker && <Ticker />}
     </section>
   );
 }

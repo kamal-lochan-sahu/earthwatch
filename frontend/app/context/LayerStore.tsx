@@ -18,11 +18,13 @@ export interface LayerState {
   items: LayerItem[];
   /** ms epoch of the last successful load. */
   updatedAt: number | null;
-  /** A refresh failed; we are showing the previous data. */
+  /** A refresh failed (or the backend served an old copy); we are showing the previous data. */
   stale: boolean;
+  /** Headline number from the layer's `counter()` (e.g. quakes in the last 24h). */
+  counter: { labelKey: string; value: number } | null;
 }
 
-const EMPTY: LayerState = { status: "idle", items: [], updatedAt: null, stale: false };
+const EMPTY: LayerState = { status: "idle", items: [], updatedAt: null, stale: false, counter: null };
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 15_000;
 
@@ -59,8 +61,18 @@ export function LayerStoreProvider({ children }: { children: React.ReactNode }) 
       try {
         const json = await apiGetShared(def.endpoint, 5_000);
         const items = def.parse(json);
+        const counter = def.counter?.(json) ?? null;
+        // Hazard endpoints flag when the backend is serving an older copy; show THAT age, not now.
+        const backendStale = json?.stale === true;
+        const backendAt = backendStale ? Date.parse(json?.updated_at) : NaN;
         attempts.current[def.id] = 0;
-        patch(def.id, () => ({ status: "ok", items, updatedAt: Date.now(), stale: false }));
+        patch(def.id, () => ({
+          status: "ok",
+          items,
+          counter,
+          updatedAt: Number.isFinite(backendAt) ? backendAt : Date.now(),
+          stale: backendStale,
+        }));
       } catch (e) {
         console.error(`Layer ${def.id} failed:`, e);
         const n = (attempts.current[def.id] = (attempts.current[def.id] ?? 0) + 1);

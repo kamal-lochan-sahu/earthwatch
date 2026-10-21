@@ -25,3 +25,29 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Live ticker (Mission view): a seamless marquee of two identical halves. */
+@keyframes ew-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ew-ticker-viewport {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+.ew-ticker-track {
+  display: flex;
+  width: max-content;
+}
+.ew-ticker-track.ew-ticker-animate {
+  animation: ew-ticker var(--ew-ticker-dur, 90s) linear infinite;
+}
+.ew-ticker:hover .ew-ticker-track,
+.ew-ticker:focus-within .ew-ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ew-ticker-track.ew-ticker-animate { animation: none; }
+  .ew-ticker-viewport { overflow-x: auto; }
+  .ew-ticker-dup { display: none; }
+}

@@ -854,6 +854,7 @@ def fetch_api_health():
         ("trends", "/api/trends"),
         ("co2", "/api/co2"),
         ("events", "/api/events"),
+        ("earthquakes", "/api/earthquakes"),
         ("climate_index", "/api/climate-index"),
         ("arctic_ice", "/api/arctic-ice"),
         ("air_quality", "/api/air-quality"),

@@ -24,6 +24,25 @@ const IDLE_RESUME_MS = 6000;
 // Remembered across Mission-view remounts so switching tabs doesn't snap the camera back.
 let lastPov: { lat: number; lng: number; altitude: number } | null = null;
 
+/** One ripple on the globe: a layer's pulse for a fresh item, or the white selection ring. */
+interface RingDatum {
+  lat: number;
+  lng: number;
+  rgb: string; // "r,g,b"
+  maxR: number; // degrees of arc
+  speed: number; // degrees per second
+  period: number; // ms between ripples
+}
+
+function hexToRgb(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return "255,255,255";
+  const n = parseInt(m[1], 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+const SELECTION_RING = { rgb: "255,255,255", maxR: 4, speed: 2, period: 1400 };
+
 function introSeen(): boolean {
   try { return sessionStorage.getItem(INTRO_KEY) === "1"; } catch { return false; }
 }
@@ -123,12 +142,12 @@ export default function GlobeStage({
           .labelSize(1.2)
           .labelColor(() => "white")
           .labelDotRadius(0.3)
-          .ringLat((d: any) => d.lat)
-          .ringLng((d: any) => d.lng)
-          .ringColor(() => (t: number) => `rgba(255,255,255,${1 - t})`)
-          .ringMaxRadius(4)
-          .ringPropagationSpeed(2)
-          .ringRepeatPeriod(1400)
+          .ringLat((d: RingDatum) => d.lat)
+          .ringLng((d: RingDatum) => d.lng)
+          .ringColor((d: RingDatum) => (t: number) => `rgba(${d.rgb},${1 - t})`)
+          .ringMaxRadius((d: RingDatum) => d.maxR)
+          .ringPropagationSpeed((d: RingDatum) => d.speed)
+          .ringRepeatPeriod((d: RingDatum) => d.period)
           .onGlobeReady(() => finishSetup());
         globeRef.current = globe;
         // If the texture is slow/blocked, onGlobeReady may never fire: still show points after 3s.
@@ -183,7 +202,32 @@ export default function GlobeStage({
     g.labelsData(points.filter((p) => p.label));
   }, [points, ready]);
 
-  // ---- selection: ring + fly to it, stop rotating while something is open ----
+  // ---- rings: layer pulses on fresh items + the selection ring (none under reduced motion) ----
+  useEffect(() => {
+    const g = globeRef.current;
+    if (!g || !ready) return;
+    if (reducedMotion) {
+      g.ringsData([]);
+      return;
+    }
+    const rings: RingDatum[] = [];
+    for (const p of points) {
+      if (!p.pulse) continue;
+      rings.push({
+        lat: p.item.lat,
+        lng: p.item.lon,
+        rgb: hexToRgb(p.pulse.color),
+        maxR: p.pulse.maxRadius,
+        speed: p.pulse.maxRadius / 1.6, // each ripple takes ~1.6 s to fade out
+        period: p.pulse.periodMs,
+      });
+    }
+    const sel = points.find((p) => p.selected);
+    if (sel) rings.push({ lat: sel.item.lat, lng: sel.item.lon, ...SELECTION_RING });
+    g.ringsData(rings);
+  }, [points, ready, reducedMotion]);
+
+  // ---- selection: fly to it, stop rotating while something is open ----
   const selected = points.find((p) => p.selected) ?? null;
   const selectedKey = selected?.key ?? null;
   useEffect(() => {
@@ -195,13 +239,11 @@ export default function GlobeStage({
       clearTimeout(introTimer.current);
       if (controls) controls.autoRotate = false;
       clearTimeout(resumeTimer.current);
-      g.ringsData(reducedMotion ? [] : [{ lat: selected.item.lat, lng: selected.item.lon }]);
       g.pointOfView(
         { lat: selected.item.lat, lng: selected.item.lon, altitude: isNarrow(boxRef.current) ? 2.4 : 1.6 },
         reducedMotion ? 0 : 900
       );
     } else {
-      g.ringsData([]);
       if (controls && !reducedMotion && introPlayed.current) controls.autoRotate = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

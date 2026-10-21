@@ -56,6 +56,16 @@ export default function DetailPanel() {
           {d.action.label} →
         </button>
       )}
+      {d.link && /^https:\/\//i.test(d.link.href) && (
+        <a
+          href={d.link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 block w-full rounded-full bg-white/10 px-4 py-2 text-center text-sm font-semibold text-gray-100 hover:bg-white/15"
+        >
+          {d.link.label} ↗
+        </a>
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ interface Props {
   points: MapPoint[];
   onSelect: (key: string | null) => void;
   units: UnitCtx;
+  reducedMotion: boolean;
   labels: { zoomIn: string; zoomOut: string; zoomReset: string };
 }
 
@@ -24,7 +25,7 @@ const BORDERS = mesh(topo, topo.objects.countries, (a, b) => a !== b);
  * Dependency-light 2D fallback for devices without WebGL: bundled world outline (no map
  * tiles, no network), same layers/points as the globe, pan + zoom.
  */
-export default function FlatMap({ points, onSelect, units, labels }: Props) {
+export default function FlatMap({ points, onSelect, units, reducedMotion, labels }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown>>();
@@ -79,7 +80,13 @@ export default function FlatMap({ points, onSelect, units, labels }: Props) {
     () =>
       points
         .map((p) => ({ p, xy: projection([p.item.lon, p.item.lat]) }))
-        .filter((d): d is { p: MapPoint; xy: [number, number] } => !!d.xy),
+        .filter((d): d is { p: MapPoint; xy: [number, number] } => !!d.xy)
+        // Selected on top, then bigger markers above smaller ones (e.g. strong quakes over weak).
+        .sort(
+          (a, b) =>
+            Number(a.p.selected) - Number(b.p.selected) ||
+            (a.p.item.size ?? 1) - (b.p.item.size ?? 1)
+        ),
     [points, projection]
   );
 
@@ -99,39 +106,54 @@ export default function FlatMap({ points, onSelect, units, labels }: Props) {
         <g transform={tf.toString()}>
           <path d={landPath} fill="#111a2b" stroke="none" onClick={() => onSelect(null)} />
           <path d={borderPath} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={0.5 / tf.k} />
-          {placed.map(({ p, xy }) => (
-            <g key={p.key} transform={`translate(${xy[0]},${xy[1]})`}>
-              {p.selected && (
-                <circle r={11 / tf.k} fill="none" stroke="#fff" strokeOpacity={0.8} strokeWidth={1.5 / tf.k} />
-              )}
-              <circle
-                r={(p.selected ? 6 : 4) / tf.k}
-                fill={p.color}
-                stroke="rgba(0,0,0,0.5)"
-                strokeWidth={0.8 / tf.k}
-                tabIndex={0}
-                role="button"
-                aria-label={p.item.title}
-                aria-pressed={p.selected}
-                className="cursor-pointer outline-none focus-visible:stroke-white"
-                onClick={(e) => { e.stopPropagation(); onSelect(p.key); }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(p.key); }
-                }}
-                onMouseEnter={(e) => setHover({ p, x: e.clientX, y: e.clientY })}
-                onMouseMove={(e) => setHover({ p, x: e.clientX, y: e.clientY })}
-                onMouseLeave={() => setHover(null)}
-              />
-              {p.selected && (
-                <text
-                  x={9 / tf.k} y={4 / tf.k} fill="#fff" fontSize={13 / tf.k}
-                  style={{ paintOrder: "stroke" }} stroke="#05070d" strokeWidth={3 / tf.k}
-                >
-                  {p.item.title}
-                </text>
-              )}
-            </g>
-          ))}
+          {placed.map(({ p, xy }) => {
+            const base = Math.max(2.2, 4 * (p.item.size ?? 1)); // px at zoom 1
+            return (
+              <g key={p.key} transform={`translate(${xy[0]},${xy[1]})`}>
+                {p.pulse && !reducedMotion && (
+                  <circle
+                    r={base / tf.k}
+                    fill="none"
+                    stroke={p.pulse.color}
+                    strokeWidth={1.5 / tf.k}
+                    pointerEvents="none"
+                  >
+                    <animate attributeName="r" from={base / tf.k} to={(base + 6 + p.pulse.maxRadius * 3) / tf.k} dur="2.2s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" from="0.9" to="0" dur="2.2s" repeatCount="indefinite" />
+                  </circle>
+                )}
+                {p.selected && (
+                  <circle r={11 / tf.k} fill="none" stroke="#fff" strokeOpacity={0.8} strokeWidth={1.5 / tf.k} />
+                )}
+                <circle
+                  r={(p.selected ? base * 1.5 : base) / tf.k}
+                  fill={p.color}
+                  stroke="rgba(0,0,0,0.5)"
+                  strokeWidth={0.8 / tf.k}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={p.item.title}
+                  aria-pressed={p.selected}
+                  className="cursor-pointer outline-none focus-visible:stroke-white"
+                  onClick={(e) => { e.stopPropagation(); onSelect(p.key); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(p.key); }
+                  }}
+                  onMouseEnter={(e) => setHover({ p, x: e.clientX, y: e.clientY })}
+                  onMouseMove={(e) => setHover({ p, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHover(null)}
+                />
+                {p.selected && (
+                  <text
+                    x={9 / tf.k} y={4 / tf.k} fill="#fff" fontSize={13 / tf.k}
+                    style={{ paintOrder: "stroke" }} stroke="#05070d" strokeWidth={3 / tf.k}
+                  >
+                    {p.item.title}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </g>
       </svg>
 
@@ -147,7 +169,7 @@ export default function FlatMap({ points, onSelect, units, labels }: Props) {
         </div>
       )}
 
-      <div className="absolute right-3 top-3 flex flex-col gap-1 md:bottom-3 md:left-3 md:right-auto md:top-auto md:flex-row">
+      <div className="absolute right-3 top-3 flex flex-col gap-1 md:bottom-12 md:left-3 md:right-auto md:top-auto md:flex-row">
         {[
           { l: "+", a: labels.zoomIn, f: () => zoomBy(1.6) },
           { l: "−", a: labels.zoomOut, f: () => zoomBy(1 / 1.6) },

@@ -1,5 +1,5 @@
 import { LAYER_BY_ID } from "../../layers";
-import type { LayerDef, LayerItem } from "../../layers/types";
+import type { LayerDef, LayerItem, PulseSpec } from "../../layers/types";
 import type { LayerState } from "../../context/LayerStore";
 
 /** One renderable marker, shared by the 3D globe and the 2D map. */
@@ -12,12 +12,18 @@ export interface MapPoint {
   altitude: number;
   label: boolean;
   selected: boolean;
+  /** Ripple ring for fresh items (already limited to MAX_PULSES across all layers). */
+  pulse: PulseSpec | null;
 }
+
+/** Ripples are the most expensive thing on the globe: only the freshest few are animated. */
+export const MAX_PULSES = 25;
 
 export function buildPoints(
   activeIds: string[],
   states: Record<string, LayerState>,
-  selectedKey: string
+  selectedKey: string,
+  now: number = Date.now()
 ): MapPoint[] {
   const out: MapPoint[] = [];
   for (const id of activeIds) {
@@ -27,17 +33,27 @@ export function buildPoints(
     for (const item of st.items) {
       const key = `${def.id}:${item.id}`;
       const selected = key === selectedKey;
+      const radius = def.globe.radius * (item.size ?? 1);
+      const altitude = def.globe.altitude + (item.lift ?? 0);
       out.push({
         key,
         def,
         item,
         color: item.color,
-        radius: selected ? def.globe.radius * 1.8 : def.globe.radius,
-        altitude: selected ? def.globe.altitude + 0.04 : def.globe.altitude,
+        radius: selected ? radius * 1.8 : radius,
+        altitude: selected ? altitude + 0.04 : altitude,
         label: def.globe.labels,
         selected,
+        pulse: def.pulse?.(item, now) ?? null,
       });
     }
+  }
+
+  // Keep ripples on the freshest items only (the 3D globe and the 2D map share this).
+  const pulsing = out.filter((p) => p.pulse);
+  if (pulsing.length > MAX_PULSES) {
+    pulsing.sort((a, b) => (b.item.time ?? 0) - (a.item.time ?? 0));
+    for (const p of pulsing.slice(MAX_PULSES)) p.pulse = null;
   }
   return out;
 }

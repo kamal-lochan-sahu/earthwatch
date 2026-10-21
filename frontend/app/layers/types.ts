@@ -12,7 +12,21 @@ export interface LayerItem {
   lon: number;
   title: string;
   color: string;
+  /** Marker size multiplier of `def.globe.radius` (default 1) — e.g. earthquake magnitude. */
+  size?: number;
+  /** Extra marker height on top of `def.globe.altitude` (globe units). */
+  lift?: number;
+  /** When it happened (ms epoch). Drives the ticker order and recency pulses. */
+  time?: number;
   raw?: any;
+}
+
+/** A ripple ring drawn around a fresh item (globe: animated rings, 2D map: expanding circle). */
+export interface PulseSpec {
+  color: string;
+  /** Ring radius at the end of the ripple, in degrees of arc (globe) / scaled on the 2D map. */
+  maxRadius: number;
+  periodMs: number;
 }
 
 export interface LegendEntry {
@@ -33,6 +47,8 @@ export interface DetailView {
   rows: { label: string; value: string }[];
   /** Jumps to the Cities view for this city. */
   action?: { label: string; city: string };
+  /** External source page. Only https links are rendered. */
+  link?: { label: string; href: string };
 }
 
 /**
@@ -58,4 +74,10 @@ export interface LayerDef {
     /** Draw a text label next to every point (cheap only for small layers). */
     labels: boolean;
   };
+  /** Optional: ripple rings for fresh items. Return null when an item should not pulse. */
+  pulse?: (item: LayerItem, now: number) => PulseSpec | null;
+  /** Optional: one-line ticker text (the ticker appends the relative time itself). */
+  ticker?: (item: LayerItem, u: UnitCtx) => string;
+  /** Optional: a headline counter for the ticker, read from the raw endpoint JSON. */
+  counter?: (json: any) => { labelKey: string; value: number } | null;
 }

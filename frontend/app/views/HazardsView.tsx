@@ -1,6 +1,7 @@
 "use client";
 import ViewContainer from "../components/ViewContainer";
 import Skeleton from "../components/Skeleton";
+import EarthquakesPanel from "../components/hazards/EarthquakesPanel";
 import { useAppState } from "../context/AppState";
 import { useData } from "../context/DataContext";
 import { getEventIcon, getSeverityColor } from "../lib/format";
@@ -11,6 +12,7 @@ export default function HazardsView() {
 
   return (
     <ViewContainer>
+      <EarthquakesPanel />
       {loadingEvents ? <Skeleton className="h-48 mb-8" /> : (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-1">🚨 {t.events}</h2>

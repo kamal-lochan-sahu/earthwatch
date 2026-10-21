@@ -1,8 +1,9 @@
 import type { LayerDef, LayerGroup } from "./types";
 import { temperatureLayer } from "./temperature";
+import { earthquakesLayer } from "./earthquakes";
 
 /** Every map layer. Order = order inside its group in the LayerPanel. */
-export const LAYERS: LayerDef[] = [temperatureLayer];
+export const LAYERS: LayerDef[] = [temperatureLayer, earthquakesLayer];
 
 export const LAYER_BY_ID: Record<string, LayerDef> = Object.fromEntries(
   LAYERS.map((l) => [l.id, l])
