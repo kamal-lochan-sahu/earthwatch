@@ -61,6 +61,8 @@ def get_temperature(
 @app.get("/api/temperature/global")
 def get_global_temperature():
     data = fetch_global_temperature()
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=502, detail=data["error"])
     return {"cities": data, "total": len(data)}
 
 @app.get("/api/historical")

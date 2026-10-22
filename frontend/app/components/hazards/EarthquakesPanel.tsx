@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppState } from "../../context/AppState";
 import { apiGetShared } from "../../hooks/useApi";
 import { useNow } from "../../hooks/usePrefs";
-import { formatMag, isRecent, parseQuakes } from "../../layers/earthquakes";
+import { colorForMagnitude, formatMag, isRecent, parseQuakes } from "../../layers/earthquakes";
 import type { LayerItem } from "../../layers/types";
 import { timeAgo } from "../../lib/format";
 import Skeleton from "../Skeleton";
@@ -136,7 +136,7 @@ export default function EarthquakesPanel() {
               ))}
               {counts.strongest_24h && (
                 <div role="listitem" className={`${chip} min-w-0 flex-1`}>
-                  <p className="text-xl font-bold text-orange-400">{formatMag(counts.strongest_24h.mag)}</p>
+                  <p className="text-xl font-bold" style={{ color: colorForMagnitude(counts.strongest_24h.mag) }}>{formatMag(counts.strongest_24h.mag)}</p>
                   <p className="truncate text-[11px] text-gray-400">
                     {t.statStrongest} · {counts.strongest_24h.place}
                   </p>

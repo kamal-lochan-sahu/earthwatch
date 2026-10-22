@@ -28,6 +28,14 @@ export function sizeForMagnitude(mag: number): number {
   return clamp(radiusDeg / BASE_RADIUS, 0.35, 3);
 }
 
+/** Severity colour for a raw magnitude (same thresholds as the backend's severity). */
+export function colorForMagnitude(mag: number): string {
+  if (mag >= 7) return QUAKE_SEVERITY_COLOR.extreme;
+  if (mag >= 6) return QUAKE_SEVERITY_COLOR.moderate;
+  if (mag >= 4.5) return QUAKE_SEVERITY_COLOR.mild;
+  return QUAKE_SEVERITY_COLOR.info;
+}
+
 export const formatMag = (m: number) => `M ${m.toFixed(1)}`;
 
 function isFiniteNumber(n: unknown): n is number {

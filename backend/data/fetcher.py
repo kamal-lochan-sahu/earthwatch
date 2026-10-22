@@ -160,6 +160,11 @@ def fetch_global_temperature():
                 "wind_speed": data["current_wind_speed"],
                 "timestamp": data["timestamp"]
             })
+    if not results:
+        # Every city failed (typically an Open-Meteo 429 burst). Returning [] would let the
+        # ttl_cache hold the empty list for 15 min; an error dict is never cached, and the
+        # cache serves the last good list instead when there is one.
+        return {"error": "No city temperatures available (upstream unavailable)"}
     return results
 
 
