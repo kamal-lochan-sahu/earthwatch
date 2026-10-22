@@ -40,7 +40,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, Globe.gl |
 | Backend | FastAPI, Python 3.11, Uvicorn |
 | ML | Scikit-learn (Isolation Forest), SciPy (Linear Regression) |
-| Data Sources | NASA POWER, Open-Meteo, NOAA CO2, GDACS Events, USGS Earthquakes |
+| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited), NOAA CO2, GDACS Events, USGS Earthquakes |
 | Deploy | Vercel (Frontend), Render (Backend) |
 | PWA | Web App Manifest, Custom Icons |
 | i18n | 21 Languages — Auto region detection via ipapi.co |

@@ -1,4 +1,5 @@
 import requests
+from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import time
 from datetime import datetime, timedelta
@@ -56,7 +57,11 @@ def fetch_open_meteo_current(latitude: float, longitude: float):
 def fetch_live_temperature(latitude: float, longitude: float):
     data = fetch_open_meteo_current(latitude, longitude)
     if "error" in data:
-        return data
+        # Open-Meteo unavailable / rate-limited: one-city fallback so the live chip is not blank.
+        fallback = _fetch_met_norway_city({"lat": latitude, "lon": longitude})
+        if not fallback:
+            return data
+        data = fallback
     try:
         current = data["current"]
         return {
@@ -167,8 +172,11 @@ def _fetch_cities_batch(cities):
                 payload = response.json()
                 return [payload] if isinstance(payload, dict) else payload
             last_error = f"HTTP {response.status_code}"
-            if response.status_code != 429 and response.status_code < 500:
-                break
+            reason = _open_meteo_reason(response)
+            if reason:
+                last_error += f": {reason}"  # e.g. "Daily API request limit exceeded"
+            if response.status_code < 500:
+                break  # 4xx incl. 429 (a limit won't clear in 2 s): don't retry, use the fallback
         except Exception as e:
             last_error = type(e).__name__
         if attempt == 0:
@@ -176,11 +184,63 @@ def _fetch_cities_batch(cities):
     return {"error": f"Open-Meteo unavailable ({last_error})"}
 
 
+def _open_meteo_reason(response):
+    try:
+        body = response.json()
+        reason = body.get("reason") if isinstance(body, dict) else None
+        return str(reason)[:80] if reason else None
+    except Exception:
+        return None
+
+
+MET_NORWAY_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+# MET Norway blocks generic user agents: it wants the app name plus a contact URL.
+MET_NORWAY_USER_AGENT = "EarthWatch/1.0 https://github.com/kamal-lochan-sahu/earthwatch"
+
+
+def _fetch_met_norway_city(city):
+    """One city from MET Norway, shaped like an Open-Meteo `current` block; None on any failure."""
+    try:
+        r = requests.get(
+            MET_NORWAY_URL,
+            params={"lat": round(city["lat"], 4), "lon": round(city["lon"], 4)},
+            headers={"User-Agent": MET_NORWAY_USER_AGENT},
+            timeout=10,
+        )
+        if r.status_code != 200:
+            return None
+        step = r.json()["properties"]["timeseries"][0]
+        d = step["data"]["instant"]["details"]
+        return {"current": {
+            "time": step["time"].rstrip("Z")[:16],  # "2026-10-22T08:00"
+            "temperature_2m": d["air_temperature"],
+            "relative_humidity_2m": d["relative_humidity"],
+            "wind_speed_10m": round(d["wind_speed"] * 3.6, 1),  # m/s -> km/h (Open-Meteo's unit)
+        }}
+    except Exception:
+        return None
+
+
+def _fetch_cities_met_norway(cities):
+    """Fallback when Open-Meteo is rate-limiting: a few parallel requests (MET allows ~20/s)."""
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        entries = list(pool.map(_fetch_met_norway_city, cities))
+    if not any(entries):
+        return {"error": "MET Norway unavailable"}
+    return [e or {} for e in entries]
+
+
 @ttl_cache(ttl_seconds=GLOBAL_TEMPERATURE_TTL_SECONDS)
 def fetch_global_temperature():
+    source = "open-meteo"
     payload = _fetch_cities_batch(MAJOR_CITIES)
     if isinstance(payload, dict):
-        return payload  # error dict: never cached, the last good list is served instead
+        primary_error = payload["error"]
+        source = "met.no"
+        payload = _fetch_cities_met_norway(MAJOR_CITIES)
+        if isinstance(payload, dict):
+            # Both failed. An error dict is never cached; the last good list is served instead.
+            return {"error": f"{primary_error}; {payload['error']}"}
 
     results = []
     for city, entry in zip(MAJOR_CITIES, payload):
@@ -194,6 +254,7 @@ def fetch_global_temperature():
                 "humidity": float(current["relative_humidity_2m"]),
                 "wind_speed": float(current["wind_speed_10m"]),
                 "timestamp": current["time"],
+                "source": source,
             })
         except (KeyError, TypeError, ValueError):
             continue  # one city without data must not drop the rest

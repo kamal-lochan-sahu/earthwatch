@@ -60,6 +60,7 @@ export const temperatureLayer: LayerDef = {
     const rows = [{ label: "Humidity", value: `${r.humidity}%` }];
     if (Number.isFinite(r.wind_speed)) rows.push({ label: "Wind", value: `${r.wind_speed} km/h` });
     if (r.timestamp) rows.push({ label: "Observed (UTC)", value: String(r.timestamp).replace("T", " ") });
+    if (r.source) rows.push({ label: "Source", value: r.source === "met.no" ? "MET Norway" : "Open-Meteo" });
     return {
       title: item.title,
       subtitle: "Live temperature",
