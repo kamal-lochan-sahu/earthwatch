@@ -42,7 +42,7 @@ export function buildPoints(
         color: item.color,
         radius: selected ? radius * 1.8 : radius,
         altitude: selected ? altitude + 0.04 : altitude,
-        label: def.globe.labels,
+        label: item.label ?? def.globe.labels,
         selected,
         pulse: def.pulse?.(item, now) ?? null,
       });

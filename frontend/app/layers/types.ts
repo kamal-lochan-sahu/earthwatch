@@ -16,6 +16,8 @@ export interface LayerItem {
   size?: number;
   /** Extra marker height on top of `def.globe.altitude` (globe units). */
   lift?: number;
+  /** Draw a text label for this item (defaults to `def.globe.labels`) — lets a layer label only its big items. */
+  label?: boolean;
   /** When it happened (ms epoch). Drives the ticker order and recency pulses. */
   time?: number;
   raw?: any;

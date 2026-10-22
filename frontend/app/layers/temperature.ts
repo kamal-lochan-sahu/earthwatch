@@ -13,7 +13,7 @@ function bandColor(c: number): string {
 
 const fmt = (c: number, u: UnitCtx) => `${u.convertTemp(c)}${u.tempUnit}`;
 
-/** Live temperature of ~100 major cities (the original globe data). */
+/** Live temperature of ~60 cities across every continent (labels on the ~15 biggest). */
 export const temperatureLayer: LayerDef = {
   id: "temperature",
   group: "weather",
@@ -39,6 +39,7 @@ export const temperatureLayer: LayerDef = {
         lon: c.longitude,
         title: c.city,
         color: bandColor(c.temperature),
+        label: c.major !== false, // label only the big cities; an older backend without the flag labels all
         raw: c,
       }));
   },

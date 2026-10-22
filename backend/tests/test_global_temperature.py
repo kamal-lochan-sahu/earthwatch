@@ -85,7 +85,7 @@ def test_result_shape_and_order_match_the_city_list():
     city = fetcher.MAJOR_CITIES[0]
     assert result[0] == {"city": city["name"], "latitude": city["lat"], "longitude": city["lon"],
                          "temperature": 20.0, "humidity": 50.0, "wind_speed": 9.5,
-                         "timestamp": "2026-10-22T08:00", "source": "open-meteo"}
+                         "timestamp": "2026-10-22T08:00", "source": "open-meteo", "major": True}
     assert result[3]["city"] == fetcher.MAJOR_CITIES[3]["name"] and result[3]["temperature"] == 23.0
 
 
@@ -207,3 +207,22 @@ def test_live_temperature_keeps_the_original_error_when_fallback_also_fails():
     fake = router(resp({}, 429), resp({}, 500))
     with patch.object(fetcher.requests, "get", fake), patch.object(fetcher, "fetch_open_meteo_current", return_value={"error": "429"}):
         assert fetcher.fetch_live_temperature(28.6, 77.2) == {"error": "429"}
+
+
+# ---------- the city list itself ----------
+
+def test_city_list_is_a_sane_global_spread():
+    cities = fetcher.MAJOR_CITIES
+    names = [c["name"] for c in cities]
+    assert len(cities) >= 50 and len(names) == len(set(names))
+    assert all(-90 <= c["lat"] <= 90 and -180 <= c["lon"] <= 180 for c in cities)
+    assert 10 <= sum(1 for c in cities if c.get("major")) <= 20  # labels stay readable
+    assert any(c["lat"] < -60 for c in cities) and any(c["lat"] > 60 for c in cities)  # both extremes
+    assert len({round(c["lon"] / 60) for c in cities}) >= 6  # spread across longitudes
+
+
+def test_only_major_cities_are_flagged_for_labels():
+    result, _ = run(resp(om_ok()), resp({}, 500))
+    flagged = {c["city"] for c in result if c["major"]}
+    assert flagged == {c["name"] for c in fetcher.MAJOR_CITIES if c.get("major")}
+    assert len(result) > len(flagged)
