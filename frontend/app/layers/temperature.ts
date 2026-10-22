@@ -59,7 +59,7 @@ export const temperatureLayer: LayerDef = {
     const r = item.raw;
     const rows = [{ label: "Humidity", value: `${r.humidity}%` }];
     if (Number.isFinite(r.wind_speed)) rows.push({ label: "Wind", value: `${r.wind_speed} km/h` });
-    if (r.timestamp) rows.push({ label: "Observed", value: String(r.timestamp).replace("T", " ") });
+    if (r.timestamp) rows.push({ label: "Observed (UTC)", value: String(r.timestamp).replace("T", " ") });
     return {
       title: item.title,
       subtitle: "Live temperature",

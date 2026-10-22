@@ -144,27 +144,61 @@ MAJOR_CITIES = [
     {"name": "Bhubaneswar", "lat": 20.30, "lon": 85.82},
 ]
 
-@ttl_cache(ttl_seconds=900)
+GLOBAL_TEMPERATURE_TTL_SECONDS = 1800  # city temperatures move slowly; spend quota on live events instead
+
+
+def _fetch_cities_batch(cities):
+    """
+    ONE Open-Meteo request for every city (multi-location: comma-separated coordinates), asking
+    only for what the globe shows. Far lighter than a full per-city forecast call, and avoids a
+    burst of ~100 separate requests. Returns a list aligned with `cities`, or {"error": ...}.
+    """
+    params = {
+        "latitude": ",".join(str(c["lat"]) for c in cities),
+        "longitude": ",".join(str(c["lon"]) for c in cities),
+        "current": "temperature_2m,relative_humidity_2m,wind_speed_10m",
+        # no `timezone`: the default (UTC) is valid for any number of locations, so timestamps are UTC
+    }
+    last_error = "unknown error"
+    for attempt in range(2):
+        try:
+            response = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=20)
+            if response.status_code == 200:
+                payload = response.json()
+                return [payload] if isinstance(payload, dict) else payload
+            last_error = f"HTTP {response.status_code}"
+            if response.status_code != 429 and response.status_code < 500:
+                break
+        except Exception as e:
+            last_error = type(e).__name__
+        if attempt == 0:
+            time.sleep(2)
+    return {"error": f"Open-Meteo unavailable ({last_error})"}
+
+
+@ttl_cache(ttl_seconds=GLOBAL_TEMPERATURE_TTL_SECONDS)
 def fetch_global_temperature():
+    payload = _fetch_cities_batch(MAJOR_CITIES)
+    if isinstance(payload, dict):
+        return payload  # error dict: never cached, the last good list is served instead
+
     results = []
-    for city in MAJOR_CITIES:
-        data = fetch_live_temperature(city["lat"], city["lon"])
-        time.sleep(0.5)
-        if "error" not in data:
+    for city, entry in zip(MAJOR_CITIES, payload):
+        try:
+            current = entry["current"]
             results.append({
                 "city": city["name"],
                 "latitude": city["lat"],
                 "longitude": city["lon"],
-                "temperature": data["current_temperature"],
-                "humidity": data["current_humidity"],
-                "wind_speed": data["current_wind_speed"],
-                "timestamp": data["timestamp"]
+                "temperature": float(current["temperature_2m"]),
+                "humidity": float(current["relative_humidity_2m"]),
+                "wind_speed": float(current["wind_speed_10m"]),
+                "timestamp": current["time"],
             })
+        except (KeyError, TypeError, ValueError):
+            continue  # one city without data must not drop the rest
     if not results:
-        # Every city failed (typically an Open-Meteo 429 burst). Returning [] would let the
-        # ttl_cache hold the empty list for 15 min; an error dict is never cached, and the
-        # cache serves the last good list instead when there is one.
-        return {"error": "No city temperatures available (upstream unavailable)"}
+        return {"error": "No city temperatures available (empty upstream response)"}
     return results
 
 
