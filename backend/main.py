@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data, fetch_weather_events
 from data.hazards.earthquakes import build_earthquake_response, WINDOWS as EARTHQUAKE_WINDOWS
+from data.hazards.feeds import build_layer_response, build_hazards_response, CATEGORY_TO_LAYER
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -153,6 +154,53 @@ def get_earthquakes(
     data = build_earthquake_response(window=window, min_mag=min_mag, region=region)
     if "error" in data:
         raise HTTPException(status_code=502, detail="Earthquake data source (USGS) is temporarily unavailable")
+    return data
+
+def _hazard_layer(layer: str, label: str):
+    data = build_layer_response(layer)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"{label} data source is temporarily unavailable")
+    return data
+
+@app.get("/api/wildfires")
+def get_wildfires():
+    """Active wildfires (NASA EONET) with severity by burned area"""
+    return _hazard_layer("wildfires", "Wildfire")
+
+@app.get("/api/volcanoes")
+def get_volcanoes():
+    """Volcanoes currently erupting or in notable unrest (NASA EONET)"""
+    return _hazard_layer("volcanoes", "Volcano")
+
+@app.get("/api/icebergs")
+def get_icebergs():
+    """Tracked icebergs (NASA EONET / U.S. National Ice Center)"""
+    return _hazard_layer("icebergs", "Iceberg")
+
+@app.get("/api/storms")
+def get_storms():
+    """Active tropical cyclones and severe storms (GDACS alert levels + NASA EONET)"""
+    return _hazard_layer("storms", "Storm")
+
+@app.get("/api/hazards")
+def get_hazards(
+    category: str = Query(None, description="Comma list of: wildfire, volcano, storm, iceberg (default: all)"),
+    min_severity: str = Query("info", description="info, mild, moderate or extreme"),
+    limit: int = Query(200, description="Max items returned (1-1000)"),
+):
+    """All active non-earthquake hazards in one list, most severe first"""
+    if min_severity not in ("info", "mild", "moderate", "extreme"):
+        raise HTTPException(status_code=400, detail="min_severity must be one of: info, mild, moderate, extreme")
+    if not (1 <= limit <= 1000):
+        raise HTTPException(status_code=400, detail="limit must be between 1 and 1000")
+    cats = None
+    if category:
+        cats = [c.strip() for c in category.split(",") if c.strip()]
+        if not cats or any(c not in CATEGORY_TO_LAYER for c in cats):
+            raise HTTPException(status_code=400, detail="category must be a comma list of: wildfire, volcano, storm, iceberg")
+    data = build_hazards_response(categories=cats, min_severity=min_severity, limit=limit)
+    if "error" in data:
+        raise HTTPException(status_code=502, detail="Hazard data sources are temporarily unavailable")
     return data
 
 # ============================================

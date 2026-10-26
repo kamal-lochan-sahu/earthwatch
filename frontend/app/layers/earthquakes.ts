@@ -1,13 +1,9 @@
 import { timeAgo } from "../lib/format";
+import { SEVERITY_COLOR } from "./severity";
 import type { LayerDef, LayerItem, PulseSpec } from "./types";
 
 /** Severity scale shared with the backend (backend/data/hazards/earthquakes.py). */
-export const QUAKE_SEVERITY_COLOR: Record<string, string> = {
-  info: "#60a5fa",
-  mild: "#facc15",
-  moderate: "#fb923c",
-  extreme: "#f87171",
-};
+export const QUAKE_SEVERITY_COLOR: Record<string, string> = SEVERITY_COLOR;
 export const QUAKE_SEVERITY_LABEL: Record<string, string> = {
   info: "Minor",
   mild: "Light–moderate",
