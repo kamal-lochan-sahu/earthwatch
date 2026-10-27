@@ -9,6 +9,7 @@ EONET v3 event: {id, title, link, categories: [{id, title}], sources: [{id, url}
                  geometry: [{date, type: Point|Polygon, coordinates, magnitudeValue, magnitudeUnit}]}
 The newest geometry entry is the event's current position / size.
 """
+import re
 import time
 
 import requests
@@ -28,7 +29,10 @@ MAX_ITEMS = 600                 # per layer; most severe, then newest, are kept.
 
 DAY = 86400
 # EONET keeps events "open" long after the last update; drop the ones that went quiet.
-MAX_AGE_SECONDS = {"wildfire": 30 * DAY, "storm": 10 * DAY, "volcano": 180 * DAY, "iceberg": 120 * DAY}
+MAX_AGE_SECONDS = {"wildfire": 14 * DAY, "storm": 10 * DAY, "volcano": 180 * DAY, "iceberg": 120 * DAY}
+
+# Planned / controlled burns are not hazards (EONET lists them from the US IRWIN feed).
+_PLANNED_BURN = re.compile(r"\bprescribed\b|\brx\b", re.IGNORECASE)
 
 HECTARES_PER_ACRE = 0.404686
 KM2_PER_NM2 = 3.4299
@@ -109,6 +113,8 @@ def _parse_event(event, now_ms):
     kind = _kind_for(event)
     event_id = str(event.get("id") or "").strip()
     if not kind or not event_id or event.get("closed"):
+        return None
+    if kind == "wildfire" and _PLANNED_BURN.search(str(event.get("title") or "")):
         return None
 
     dated = []

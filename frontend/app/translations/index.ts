@@ -70,6 +70,7 @@ export const translations: Record<string, Record<string, string>> = {
     hazardsMore: "Show more",
     tickerLabel: "Live events",
     tickerEmpty: "No recent events yet",
+    tickerCounters: "Event counts (scrollable)",
     quakesTitle: "Earthquakes",
     quakesSource: "Source: USGS Earthquake Hazards Program · magnitude 2.5 and above",
     quakesLast24h: "Last 24 hours",

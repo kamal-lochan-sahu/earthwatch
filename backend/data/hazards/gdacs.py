@@ -25,7 +25,7 @@ USER_AGENT = "EarthWatch/1.0 (+https://github.com/kamal-lochan-sahu/earthwatch)"
 
 FEED_TTL_SECONDS = 900
 LOOKBACK_DAYS = 14
-STILL_ACTIVE_SECONDS = 3 * 86400     # not flagged current, but updated in the last 3 days
+STILL_ACTIVE_SECONDS = 2 * 86400     # not flagged current, but updated in the last 2 days
 
 ALERT_SEVERITY = {"red": "extreme", "orange": "moderate", "green": "mild"}
 _TAGS = re.compile(r"<[^>]+>")

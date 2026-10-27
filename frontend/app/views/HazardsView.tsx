@@ -9,7 +9,9 @@ import { getEventIcon, getSeverityColor } from "../lib/format";
 
 export default function HazardsView() {
   const { t } = useAppState();
-  const { events, loadingEvents } = useData();
+  const { events: allEvents, loadingEvents } = useData();
+  // Cyclones are listed (with more detail) in the Active hazards panel above.
+  const events = allEvents.filter((e: any) => e.type !== "TC");
 
   return (
     <ViewContainer>
@@ -18,7 +20,7 @@ export default function HazardsView() {
       {loadingEvents ? <Skeleton className="h-48 mb-8" /> : (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-1">🚨 {t.events}</h2>
-          <p className="text-gray-500 text-xs mb-4">Source: GDACS — Global Disaster Alert & Coordination System</p>
+          <p className="text-gray-500 text-xs mb-4">Source: GDACS — Global Disaster Alert & Coordination System · cyclones are in Active hazards</p>
           {events.length === 0 ? (
             <p className="text-gray-500 text-sm text-center py-6">{t.noEvents}</p>
           ) : (

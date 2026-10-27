@@ -116,6 +116,17 @@ def test_old_closed_future_and_malformed_events_are_dropped(upstream):
     assert [i["id"] for i in build_layer_response("wildfires")["items"]] == ["EONET_OK"]
 
 
+def test_planned_burns_and_stale_fires_are_dropped(upstream):
+    upstream.eonet = [
+        ev("EONET_RX1", "wildfires", "Prescribed Fire STE - Goodin Ridge RX, McCreary, Kentucky"),
+        ev("EONET_RX2", "wildfires", "Prescribed Fire Rx Polk 9275, Polk, Texas"),
+        ev("EONET_20D", "wildfires", "Wildfire Old, Idaho", hours_ago=24 * 20),   # quiet for 20 days > 14
+        ev("EONET_10D", "wildfires", "Wildfire Recent, Idaho", hours_ago=24 * 10),
+        ev("EONET_OK", "wildfires", "Wildfire Fresh, Oregon"),
+    ]
+    assert {i["id"] for i in build_layer_response("wildfires")["items"]} == {"EONET_10D", "EONET_OK"}
+
+
 def test_polygon_centroid_and_antimeridian(upstream):
     ring = [[179.0, 10.0], [-179.0, 10.0], [-179.0, 12.0], [179.0, 12.0]]
     upstream.eonet = [ev("EONET_P", "seaLakeIce", "Iceberg B", coords=[ring], gtype="Polygon")]
@@ -138,6 +149,15 @@ def test_gdacs_cyclone_parsing(upstream):
     i = items[0]
     assert i["severity"] == "extreme" and i["value"] == 230 and i["title"] == "Typhoon RAGASA-25"
     assert i["source"] == "GDACS" and i["alert"] == "red" and i["url"].startswith("https://")
+
+
+def test_finished_cyclone_drops_out_after_two_days(upstream):
+    upstream.gdacs = [
+        tc("1", "FRESH-25", current="false", todate=iso(30)),      # 30 h ago: still shown
+        tc("2", "STALE-25", current="false", todate=iso(60)),      # 60 h ago: over
+        tc("3", "LIVE-25", current="true", todate=iso(60)),        # flagged current: always shown
+    ]
+    assert {i["id"] for i in build_layer_response("storms")["items"]} == {"gdacs-TC-1", "gdacs-TC-3"}
 
 
 def test_alert_level_and_wind_take_the_higher_severity(upstream):

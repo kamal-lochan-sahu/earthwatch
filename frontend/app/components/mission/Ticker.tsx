@@ -80,7 +80,12 @@ export default function Ticker() {
       className="ew-ticker absolute inset-x-0 bottom-0 z-10 flex h-8 items-center gap-2 border-t border-white/10 bg-[rgba(5,7,13,0.82)] px-3 text-xs backdrop-blur md:h-9"
     >
       {counters.length > 0 && (
-        <div className="flex shrink-0 items-center gap-3 font-mono">
+        <div
+          className="flex max-w-[45%] shrink-0 items-center gap-3 overflow-x-auto font-mono [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+          tabIndex={0}
+          aria-label={t.tickerCounters}
+        >
           {counters.map((c) => (
             <span key={c.labelKey} className="whitespace-nowrap">
               <b className="text-sm text-white">{c.value}</b> <span className="text-gray-400">{t[c.labelKey]}</span>
