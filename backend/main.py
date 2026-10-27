@@ -159,7 +159,7 @@ def get_earthquakes(
 def _hazard_layer(layer: str, label: str):
     data = build_layer_response(layer)
     if "error" in data:
-        raise HTTPException(status_code=502, detail=f"{label} data source is temporarily unavailable")
+        raise HTTPException(status_code=502, detail=f"{label} data source is temporarily unavailable: {data['error']}")
     return data
 
 @app.get("/api/wildfires")
@@ -200,7 +200,7 @@ def get_hazards(
             raise HTTPException(status_code=400, detail="category must be a comma list of: wildfire, volcano, storm, iceberg")
     data = build_hazards_response(categories=cats, min_severity=min_severity, limit=limit)
     if "error" in data:
-        raise HTTPException(status_code=502, detail="Hazard data sources are temporarily unavailable")
+        raise HTTPException(status_code=502, detail=f"Hazard data sources are temporarily unavailable: {data['error']}")
     return data
 
 # ============================================

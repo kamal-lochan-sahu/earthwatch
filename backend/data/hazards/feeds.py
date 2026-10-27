@@ -125,18 +125,20 @@ def build_hazards_response(categories=None, min_severity="info", limit=200, now=
     """
     wanted = [c for c in (categories or CATEGORY_TO_LAYER) if c in CATEGORY_TO_LAYER]
     now = time.time() if now is None else now
-    items, updated, partial, stale = [], [], False, False
+    items, updated, errors, partial, stale = [], [], [], False, False
     for category in wanted:
         r = build_layer_response(CATEGORY_TO_LAYER[category], now=now)
         if "error" in r:
             partial = True
+            errors.append(r["error"])
             continue
         items.extend(r["items"])
         updated.append(_epoch(r["updated_at"]))
         partial = partial or r["partial"]
         stale = stale or r["stale"]
     if not updated:
-        return {"error": "hazard data unavailable"}
+        # Same upstream usually fails every layer: show each distinct reason once.
+        return {"error": "; ".join(dict.fromkeys(errors)) or "hazard data unavailable"}
 
     floor = severity_rank(min_severity)
     selected = [i for i in items if severity_rank(i["severity"]) >= floor]

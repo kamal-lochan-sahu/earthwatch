@@ -197,7 +197,9 @@ def test_everything_down_and_uncached_returns_error(upstream):
     upstream.eonet_status = upstream.gdacs_status = 503
     assert "error" in build_layer_response("storms")
     assert "error" in build_layer_response("wildfires")
-    assert client.get("/api/wildfires").status_code == 502
+    r = client.get("/api/wildfires")
+    assert r.status_code == 502 and "HTTP 503" in r.json()["detail"]     # the reason is visible, not hidden
+    assert "HTTP 503" in client.get("/api/hazards").json()["detail"]
 
 
 def test_serves_last_good_copy_when_eonet_fails_later(upstream, monkeypatch):

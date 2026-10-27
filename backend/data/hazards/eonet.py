@@ -9,6 +9,7 @@ EONET v3 event: {id, title, link, categories: [{id, title}], sources: [{id, url}
                  geometry: [{date, type: Point|Polygon, coordinates, magnitudeValue, magnitudeUnit}]}
 The newest geometry entry is the event's current position / size.
 """
+import logging
 import re
 import time
 
@@ -21,6 +22,8 @@ from data.hazards.common import (
 
 EONET_URL = "https://eonet.gsfc.nasa.gov/api/v3/events"
 EONET_CATEGORIES = "wildfires,volcanoes,severeStorms,seaLakeIce"
+log = logging.getLogger("earthwatch.hazards")
+
 USER_AGENT = "EarthWatch/1.0 (+https://github.com/kamal-lochan-sahu/earthwatch)"
 
 FEED_TTL_SECONDS = 900          # EONET changes slowly; 15 min is plenty and keeps us polite.
@@ -212,6 +215,7 @@ def fetch_eonet_feed():
             last_error = type(e).__name__
         if attempt == 0:
             time.sleep(1)
+    log.warning("EONET fetch failed: %s", last_error)
     return {"error": f"NASA EONET unavailable ({last_error})"}
 
 

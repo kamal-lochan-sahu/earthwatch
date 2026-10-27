@@ -8,6 +8,7 @@ GDACS GeoJSON feature: properties {eventtype, eventid, episodeid, name, descript
 fromdate, todate, iscurrent, country, severitydata: {severity, severityunit}, url: {report}},
 geometry Point [lon, lat].
 """
+import logging
 import re
 import time
 from datetime import datetime, timedelta, timezone
@@ -21,6 +22,8 @@ from data.hazards.common import (
 from data.hazards.eonet import severity_for_wind_kmh
 
 GDACS_URL = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
+log = logging.getLogger("earthwatch.hazards")
+
 USER_AGENT = "EarthWatch/1.0 (+https://github.com/kamal-lochan-sahu/earthwatch)"
 
 FEED_TTL_SECONDS = 900
@@ -119,6 +122,7 @@ def fetch_gdacs_cyclones():
             last_error = type(e).__name__
         if attempt == 0:
             time.sleep(1)
+    log.warning("GDACS fetch failed: %s", last_error)
     return {"error": f"GDACS unavailable ({last_error})"}
 
 
