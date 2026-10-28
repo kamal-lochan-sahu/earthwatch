@@ -5,6 +5,7 @@ from data.fetcher import fetch_live_temperature, fetch_historical_temperature, f
 from data.hazards.earthquakes import build_earthquake_response, WINDOWS as EARTHQUAKE_WINDOWS
 from data.hazards.feeds import build_layer_response, build_hazards_response, CATEGORY_TO_LAYER
 from data.hazards.wind import build_wind_response
+from data.hazards.waves import build_waves_response
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -189,6 +190,14 @@ def get_wind():
     data = build_wind_response()
     if "error" in data:
         raise HTTPException(status_code=502, detail=f"Wind data source is temporarily unavailable: {data['error']}")
+    return data
+
+@app.get("/api/waves")
+def get_waves():
+    """Ocean wave field (Open-Meteo Marine, open-ocean grid): wave height, direction and period"""
+    data = build_waves_response()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"Wave data source is temporarily unavailable: {data['error']}")
     return data
 
 @app.get("/api/hazards")
