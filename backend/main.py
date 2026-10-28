@@ -4,6 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from data.fetcher import fetch_live_temperature, fetch_historical_temperature, fetch_global_temperature, fetch_co2_data, fetch_weather_events
 from data.hazards.earthquakes import build_earthquake_response, WINDOWS as EARTHQUAKE_WINDOWS
 from data.hazards.feeds import build_layer_response, build_hazards_response, CATEGORY_TO_LAYER
+from data.hazards.wind import build_wind_response
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -181,6 +182,14 @@ def get_icebergs():
 def get_storms():
     """Active tropical cyclones and severe storms (GDACS alert levels + NASA EONET)"""
     return _hazard_layer("storms", "Storm")
+
+@app.get("/api/wind")
+def get_wind():
+    """Global wind field (Open-Meteo, 15-degree grid): speed, direction and gusts per point"""
+    data = build_wind_response()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"Wind data source is temporarily unavailable: {data['error']}")
+    return data
 
 @app.get("/api/hazards")
 def get_hazards(

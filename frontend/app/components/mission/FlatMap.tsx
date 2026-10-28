@@ -8,6 +8,7 @@ import type { GeometryCollection, Topology } from "topojson-specification";
 import world from "world-atlas/countries-110m.json";
 import type { UnitCtx } from "../../layers/types";
 import type { MapPoint } from "./points";
+import { arrowPath, crossesAntimeridian } from "./arrows";
 
 interface Props {
   points: MapPoint[];
@@ -90,6 +91,20 @@ export default function FlatMap({ points, onSelect, units, reducedMotion, labels
     [points, projection]
   );
 
+  // Direction arrows (wind) as projected polylines; the few that wrap the date line are skipped.
+  const arrows = useMemo(() => {
+    const out: { key: string; color: string; d: string }[] = [];
+    for (const p of points) {
+      if (!p.arrow) continue;
+      const path = arrowPath(p.item.lat, p.item.lon, p.arrow);
+      if (crossesAntimeridian(path)) continue;
+      const xy = path.map(([la, lo]) => projection([lo, la]));
+      if (xy.some((q) => !q)) continue;
+      out.push({ key: p.key, color: p.arrow.color, d: "M" + (xy as [number, number][]).map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join("L") });
+    }
+    return out;
+  }, [points, projection]);
+
   const tip = hover ? hover.p.def.tooltip(hover.p.item, units) : null;
 
   return (
@@ -106,6 +121,18 @@ export default function FlatMap({ points, onSelect, units, reducedMotion, labels
         <g transform={tf.toString()}>
           <path d={landPath} fill="#111a2b" stroke="none" onClick={() => onSelect(null)} />
           <path d={borderPath} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={0.5 / tf.k} />
+          {arrows.map((a) => (
+            <path
+              key={a.key}
+              d={a.d}
+              fill="none"
+              stroke={a.color}
+              strokeWidth={1.4 / tf.k}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pointerEvents="none"
+            />
+          ))}
           {placed.map(({ p, xy }) => {
             const base = Math.max(2.2, 4 * (p.item.size ?? 1)); // px at zoom 1
             return (

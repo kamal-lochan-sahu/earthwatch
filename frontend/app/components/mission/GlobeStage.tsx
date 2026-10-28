@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { escapeHtml } from "../../lib/format";
 import type { UnitCtx } from "../../layers/types";
 import type { MapPoint } from "./points";
+import { arrowPath } from "./arrows";
 
 interface Props {
   points: MapPoint[];
@@ -39,6 +40,13 @@ function hexToRgb(hex: string): string {
   if (!m) return "255,255,255";
   const n = parseInt(m[1], 16);
   return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+/** One direction arrow (wind) as a polyline of [lat, lon] points. */
+interface ArrowDatum {
+  key: string;
+  color: string;
+  pts: [number, number][];
 }
 
 const SELECTION_RING = { rgb: "255,255,255", maxR: 4, speed: 2, period: 1400 };
@@ -148,6 +156,14 @@ export default function GlobeStage({
           .ringMaxRadius((d: RingDatum) => d.maxR)
           .ringPropagationSpeed((d: RingDatum) => d.speed)
           .ringRepeatPeriod((d: RingDatum) => d.period)
+          .pathPoints((d: ArrowDatum) => d.pts)
+          .pathPointLat((p: [number, number]) => p[0])
+          .pathPointLng((p: [number, number]) => p[1])
+          .pathPointAlt(0.012)
+          .pathColor((d: ArrowDatum) => d.color)
+          .pathStroke(0.55)
+          .pathTransitionDuration(0)
+          .pathsData([])
           .onGlobeReady(() => finishSetup());
         globeRef.current = globe;
         // If the texture is slow/blocked, onGlobeReady may never fire: still show points after 3s.
@@ -200,6 +216,11 @@ export default function GlobeStage({
     if (!g || !ready) return;
     g.pointsData(points);
     g.labelsData(points.filter((p) => p.label));
+    const arrows: ArrowDatum[] = [];
+    for (const p of points) {
+      if (p.arrow) arrows.push({ key: p.key, color: p.arrow.color, pts: arrowPath(p.item.lat, p.item.lon, p.arrow) });
+    }
+    g.pathsData(arrows);
   }, [points, ready]);
 
   // ---- rings: layer pulses on fresh items + the selection ring (none under reduced motion) ----

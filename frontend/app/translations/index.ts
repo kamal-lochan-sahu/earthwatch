@@ -60,6 +60,7 @@ export const translations: Record<string, Record<string, string>> = {
     counterVolcanoes: "volcanoes",
     layerIcebergs: "Icebergs",
     counterIcebergs: "icebergs",
+    layerWind: "Wind",
     hazardsTitle: "Active hazards",
     hazardsSource: "Sources: GDACS and NASA EONET \u00b7 wildfires, cyclones & storms, volcanoes, icebergs",
     hazardsAll: "All",

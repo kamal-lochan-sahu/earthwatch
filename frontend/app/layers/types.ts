@@ -31,6 +31,15 @@ export interface PulseSpec {
   periodMs: number;
 }
 
+/** A direction arrow drawn from an item (wind). Globe: a path on the sphere; 2D map: a line. */
+export interface ArrowSpec {
+  /** Compass bearing the arrow points TOWARDS, in degrees clockwise from north. */
+  bearing: number;
+  /** Shaft length in degrees of arc (the head scales with it). */
+  lengthDeg: number;
+  color: string;
+}
+
 export interface LegendEntry {
   color: string;
   label: string;
@@ -78,6 +87,8 @@ export interface LayerDef {
   };
   /** Optional: ripple rings for fresh items. Return null when an item should not pulse. */
   pulse?: (item: LayerItem, now: number) => PulseSpec | null;
+  /** Optional: a direction arrow from each item (wind). Return null to draw none. */
+  arrow?: (item: LayerItem) => ArrowSpec | null;
   /** Optional: one-line ticker text (the ticker appends the relative time itself). */
   ticker?: (item: LayerItem, u: UnitCtx) => string;
   /** Optional: a headline counter for the ticker, read from the raw endpoint JSON. */

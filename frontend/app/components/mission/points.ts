@@ -1,5 +1,5 @@
 import { LAYER_BY_ID } from "../../layers";
-import type { LayerDef, LayerItem, PulseSpec } from "../../layers/types";
+import type { ArrowSpec, LayerDef, LayerItem, PulseSpec } from "../../layers/types";
 import type { LayerState } from "../../context/LayerStore";
 
 /** One renderable marker, shared by the 3D globe and the 2D map. */
@@ -14,6 +14,8 @@ export interface MapPoint {
   selected: boolean;
   /** Ripple ring for fresh items (already limited to MAX_PULSES across all layers). */
   pulse: PulseSpec | null;
+  /** Direction arrow (wind), drawn on the globe and the 2D map. */
+  arrow: ArrowSpec | null;
 }
 
 /** Ripples are the most expensive thing on the globe: only the freshest few are animated. */
@@ -45,6 +47,7 @@ export function buildPoints(
         label: item.label ?? def.globe.labels,
         selected,
         pulse: def.pulse?.(item, now) ?? null,
+        arrow: def.arrow?.(item) ?? null,
       });
     }
   }

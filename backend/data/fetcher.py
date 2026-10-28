@@ -1018,6 +1018,7 @@ def fetch_api_health():
         ("volcanoes", "/api/volcanoes"),
         ("icebergs", "/api/icebergs"),
         ("hazards", "/api/hazards"),
+        ("wind", "/api/wind"),
         ("climate_index", "/api/climate-index"),
         ("arctic_ice", "/api/arctic-ice"),
         ("air_quality", "/api/air-quality"),

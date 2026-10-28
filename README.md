@@ -26,6 +26,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 - Tracks **real-time disaster events** from GDACS (UN System)
 - Shows **live earthquakes** (USGS, M2.5+) on the globe with pulse rings, a live ticker and a filterable Hazards list
 - Shows **wildfires, cyclones & storms, volcanoes and icebergs** (NASA EONET + GDACS) as toggleable globe layers with one shared severity scale, merged into the live ticker
+- Shows a **global wind field** (Open-Meteo) as direction arrows on the globe and the 2D map, coloured by speed
 - **Search any city** in the world for live temperature + anomaly
 - **PWA enabled** — installable on mobile as an app
 - **21 languages** — auto-detects user region and shows regional language
@@ -41,7 +42,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, Globe.gl |
 | Backend | FastAPI, Python 3.11, Uvicorn |
 | ML | Scikit-learn (Isolation Forest), SciPy (Linear Regression) |
-| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited), NOAA CO2, GDACS Events & Cyclones, USGS Earthquakes, NASA EONET (wildfires, volcanoes, icebergs, storms) |
+| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited; also the global wind grid), NOAA CO2, GDACS Events & Cyclones, USGS Earthquakes, NASA EONET (wildfires, volcanoes, icebergs, storms) |
 | Deploy | Vercel (Frontend), Render (Backend) |
 | PWA | Web App Manifest, Custom Icons |
 | i18n | 21 Languages — Auto region detection via ipapi.co |
@@ -94,6 +95,7 @@ German, French, Japanese, Spanish, Arabic, Portuguese, Chinese, Korean, Italian,
 | `GET /api/volcanoes` | Volcanoes currently erupting or in notable unrest (NASA EONET) |
 | `GET /api/icebergs` | Tracked icebergs (NASA EONET / U.S. National Ice Center) |
 | `GET /api/hazards` | All of the above in one list, most severe first. Query: `category` (`wildfire,storm,volcano,iceberg`), `min_severity` (`info`/`mild`/`moderate`/`extreme`), `limit` |
+| `GET /api/wind` | Global wind field (Open-Meteo, 15° grid, 264 points): speed, direction and gusts per point. Cached 3 h, serves the last good copy if Open-Meteo rate-limits |
 | `GET /api/export/csv` | Historical data export (JSON; frontend converts to CSV) |
 | `GET /api/climate-index` | El Niño / La Niña detection (NOAA ONI Index) |
 | `GET /api/arctic-ice` | Arctic sea ice extent (NSIDC) |
@@ -124,6 +126,7 @@ Full interactive docs (request/response schemas): https://earthwatch.onrender.co
 - 🚨 **Disaster Events** — GDACS live feed (last 90 days)
 - 🫨 **Earthquakes** — USGS live feed: globe layer sized by magnitude, pulse rings on fresh quakes, live ticker, filterable list (window / magnitude / region)
 - ⚠️ **Active hazards** — wildfires, cyclones & storms, volcanoes, icebergs (EONET + GDACS): globe layers sized by severity, merged live ticker, filterable list (category / severity)
+- 💨 **Wind** — Open-Meteo 15° global grid drawn as direction arrows (colour by speed) on the globe and the 2D map; off by default, toggle it in the layer panel
 - 🔍 **City Search** — Any city worldwide
 - 🌐 **21 Languages** — Auto region detection
 - 🌡️ **°C/°F Toggle** — Unit switching
