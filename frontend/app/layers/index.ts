@@ -7,6 +7,7 @@ import { volcanoesLayer } from "./volcanoes";
 import { icebergsLayer } from "./icebergs";
 import { windLayer } from "./wind";
 import { wavesLayer } from "./waves";
+import { floodsLayer } from "./floods";
 
 /** Every map layer. Order = order inside its group in the LayerPanel. */
 export const LAYERS: LayerDef[] = [
@@ -18,6 +19,7 @@ export const LAYERS: LayerDef[] = [
   icebergsLayer,
   windLayer,
   wavesLayer,
+  floodsLayer,
 ];
 
 export const LAYER_BY_ID: Record<string, LayerDef> = Object.fromEntries(

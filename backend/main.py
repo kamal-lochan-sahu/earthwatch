@@ -6,6 +6,7 @@ from data.hazards.earthquakes import build_earthquake_response, WINDOWS as EARTH
 from data.hazards.feeds import build_layer_response, build_hazards_response, CATEGORY_TO_LAYER
 from data.hazards.wind import build_wind_response
 from data.hazards.waves import build_waves_response
+from data.hazards.floods import build_floods_response
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
 
@@ -198,6 +199,14 @@ def get_waves():
     data = build_waves_response()
     if "error" in data:
         raise HTTPException(status_code=502, detail=f"Wave data source is temporarily unavailable: {data['error']}")
+    return data
+
+@app.get("/api/floods")
+def get_floods():
+    """Big rivers (Open-Meteo Flood / GloFAS): discharge now, 7-day forecast peak vs the last 30 days"""
+    data = build_floods_response()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"River data source is temporarily unavailable: {data['error']}")
     return data
 
 @app.get("/api/hazards")
