@@ -71,6 +71,18 @@ def test_rivers_table_is_valid():
     assert len(set(ids)) == len(ids)
 
 
+def test_points_are_unique_cells_and_regulated_rivers_exist():
+    assert len(set(floods.POINTS)) == len(floods.POINTS)            # no two rivers share a grid point
+    names = {(r, p) for r, p, _, _ in floods.RIVERS}
+    assert floods.REGULATED <= names                                 # a typo here would silently flag nothing
+    assert ("Dnieper", "Kyiv") not in names and ("Krishna", "Vijayawada") not in names   # cells found were tributaries
+
+
+def test_regulated_flag():
+    assert floods._item("Nile", "Aswan", 1.0, 2.0, row(), TODAY)["regulated"] is True
+    assert floods._item("Amazon", "Obidos", 1.0, 2.0, row(), TODAY)["regulated"] is False
+
+
 def test_ratio_peak_and_baseline():
     it = item(past=1000.0, ahead=[1100.0, 1500.0, 3000.0, 2500.0, 2000.0, 1800.0, 1500.0, 1200.0])
     assert it["baseline"] == 1000.0 and it["value"] == 1100.0

@@ -14,9 +14,9 @@ Open-Meteo rate-limits us the last good copy is served and flagged `stale`.
 
 Response envelope (shared with the other layers):
     {layer, source, updated_at, stale, count, counts, items: [{id, lat, lon, title, severity,
-     value, unit, time, url, source, river, name, baseline, peak, peak_date, ratio, trend}]}
+     value, unit, time, url, source, river, name, baseline, peak, peak_date, ratio, trend, regulated}]}
 `value` is today's discharge in m3/s, `baseline` the 30-day median, `peak` the highest forecast
-value in the next 7 days and `ratio` peak / baseline.
+value in the next 7 days and `ratio` peak / baseline. `regulated` marks heavily dammed rivers.
 """
 import re
 import statistics
@@ -40,63 +40,70 @@ STALE_AFTER_SECONDS = int(TTL_SECONDS * 1.5)
 
 # (river, place on its main channel, lat, lon)
 RIVERS = [
-    ("Mississippi", "Vicksburg", 32.35, -90.90),
-    ("Mississippi", "St. Louis", 38.63, -90.18),
+    ("Mississippi", "Vicksburg", 32.325, -90.975),
+    ("Mississippi", "St. Louis", 38.425, -90.375),
     ("Missouri", "Hermann", 38.71, -91.44),
-    ("Ohio", "Cairo", 37.00, -89.17),
+    ("Ohio", "Cairo", 36.775, -89.175),
     ("Columbia", "The Dalles", 45.61, -121.17),
     ("St. Lawrence", "Quebec", 46.81, -71.20),
     ("Mackenzie", "Fort Simpson", 61.86, -121.35),
     ("Yukon", "Pilot Station", 61.93, -162.88),
-    ("Amazon", "Obidos", -1.92, -55.52),
-    ("Madeira", "Porto Velho", -8.75, -63.90),
-    ("Orinoco", "Ciudad Bolivar", 8.12, -63.55),
+    ("Amazon", "Obidos", -2.125, -55.375),
+    ("Madeira", "Porto Velho", -8.975, -64.125),
+    ("Orinoco", "Ciudad Bolivar", 8.225, -63.425),
     ("Magdalena", "Barrancabermeja", 7.07, -73.85),
-    ("Parana", "Rosario", -32.95, -60.63),
-    ("Paraguay", "Asuncion", -25.28, -57.63),
+    ("Parana", "Rosario", -33.175, -60.475),
+    ("Paraguay", "Asuncion", -25.475, -57.625),
     ("Sao Francisco", "Juazeiro", -9.40, -40.50),
     ("Danube", "Vienna", 48.20, 16.40),
-    ("Danube", "Budapest", 47.50, 19.05),
-    ("Rhine", "Cologne", 50.94, 6.96),
-    ("Elbe", "Dresden", 51.05, 13.74),
+    ("Danube", "Budapest", 47.425, 18.975),
+    ("Rhine", "Cologne", 50.775, 7.025),
+    ("Elbe", "Dresden", 51.125, 13.525),
     ("Vistula", "Warsaw", 52.23, 21.03),
-    ("Po", "Pontelagoscuro", 44.89, 11.60),
-    ("Rhone", "Arles", 43.68, 4.63),
-    ("Seine", "Paris", 48.85, 2.35),
-    ("Ebro", "Tortosa", 40.81, 0.52),
-    ("Dnieper", "Kyiv", 50.45, 30.55),
+    ("Po", "Pontelagoscuro", 44.925, 11.375),
+    ("Rhone", "Arles", 43.625, 4.625),
+    ("Seine", "Paris", 48.975, 2.125),
+    ("Ebro", "Tortosa", 40.675, 0.725),
     ("Volga", "Volgograd", 48.70, 44.50),
     ("Nile", "Khartoum", 15.60, 32.50),
-    ("Nile", "Aswan", 24.08, 32.90),
-    ("Congo", "Kinshasa", -4.30, 15.30),
-    ("Niger", "Niamey", 13.50, 2.10),
+    ("Nile", "Aswan", 23.925, 32.825),
+    ("Congo", "Kinshasa", -4.225, 15.475),
+    ("Niger", "Niamey", 13.575, 1.875),
     ("Niger", "Lokoja", 7.80, 6.75),
-    ("Senegal", "Bakel", 14.90, -12.45),
-    ("Zambezi", "Victoria Falls", -17.93, 25.85),
+    ("Senegal", "Bakel", 15.075, -12.625),
+    ("Zambezi", "Victoria Falls", -17.825, 25.625),
     ("Orange", "Upington", -28.45, 21.25),
     ("Tigris", "Baghdad", 33.30, 44.40),
     ("Euphrates", "Hit", 33.64, 42.83),
     ("Indus", "Sukkur", 27.70, 68.85),
     ("Ganges", "Varanasi", 25.32, 83.03),
     ("Ganges", "Farakka", 24.80, 87.90),
-    ("Brahmaputra", "Guwahati", 26.18, 91.75),
+    ("Brahmaputra", "Guwahati", 26.175, 91.575),
     ("Mahanadi", "Cuttack", 20.47, 85.88),
-    ("Godavari", "Rajahmundry", 17.00, 81.78),
-    ("Krishna", "Vijayawada", 16.52, 80.60),
+    ("Godavari", "Rajahmundry", 16.775, 81.825),
     ("Narmada", "Bharuch", 21.70, 73.00),
-    ("Irrawaddy", "Pyay", 18.82, 95.22),
-    ("Chao Phraya", "Nakhon Sawan", 15.70, 100.10),
-    ("Mekong", "Vientiane", 17.90, 102.60),
-    ("Mekong", "Phnom Penh", 11.57, 104.93),
-    ("Yangtze", "Wuhan", 30.55, 114.30),
-    ("Yellow River", "Jinan", 36.70, 117.00),
-    ("Amur", "Khabarovsk", 48.45, 135.10),
-    ("Lena", "Yakutsk", 62.00, 129.70),
+    ("Irrawaddy", "Pyay", 18.625, 95.025),
+    ("Chao Phraya", "Nakhon Sawan", 15.525, 100.075),
+    ("Mekong", "Vientiane", 17.975, 102.825),
+    ("Mekong", "Phnom Penh", 11.475, 105.125),
+    ("Yangtze", "Wuhan", 30.575, 114.525),
+    ("Yellow River", "Jinan", 36.925, 117.175),
+    ("Amur", "Khabarovsk", 48.675, 135.125),
+    ("Lena", "Yakutsk", 62.225, 129.875),
     ("Yenisei", "Krasnoyarsk", 56.00, 92.90),
-    ("Ob", "Salekhard", 66.50, 66.60),
-    ("Murray", "Mildura", -34.20, 142.15),
+    ("Ob", "Salekhard", 66.625, 66.675),
+    ("Murray", "Mildura", -34.425, 142.325),
 ]
 POINTS = [(lat, lon) for _, _, lat, lon in RIVERS]
+
+# Heavily dammed rivers: GloFAS does not model reservoir releases, so the "natural" flow it reports (and
+# any rise it forecasts) can differ a lot from what the dams actually let through. Flagged in the item.
+REGULATED = {
+    ("Euphrates", "Hit"), ("Tigris", "Baghdad"), ("Nile", "Aswan"), ("Nile", "Khartoum"),
+    ("Columbia", "The Dalles"), ("Volga", "Volgograd"), ("Missouri", "Hermann"), ("Yenisei", "Krasnoyarsk"),
+    ("Ebro", "Tortosa"), ("Murray", "Mildura"), ("Orange", "Upington"), ("Narmada", "Bharuch"),
+    ("Mahanadi", "Cuttack"), ("Indus", "Sukkur"), ("Yellow River", "Jinan"),
+}
 
 
 def severity_for_ratio(ratio) -> str:
@@ -167,6 +174,7 @@ def _item(river: str, place: str, lat: float, lon: float, row, today: str):
         "peak_date": peak_day,
         "ratio": ratio,
         "trend": trend,
+        "regulated": (river, place) in REGULATED,
     }
 
 

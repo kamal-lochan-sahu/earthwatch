@@ -80,6 +80,8 @@ export const floodsLayer: LayerDef = {
       { label: "Trend", value: TREND_ICON[r.trend] ?? "—" },
     ];
     if (item.time) rows.push({ label: "Data from", value: timeAgo(item.time) });
+    if (r.regulated)
+      rows.push({ label: "Note", value: "Heavily dammed river: the model ignores dam releases, so real flow can differ" });
     rows.push({ label: "Source", value: "Open-Meteo Flood API (GloFAS) · daily model data" });
     return {
       title: `${r.river} at ${r.name}`,
