@@ -55,6 +55,11 @@ export function LayerStoreProvider({ children }: { children: React.ReactNode }) 
 
   const load = useCallback(
     async (def: LayerDef) => {
+      if (!def.endpoint) {
+        // Client-only layer (computed on the device): nothing to fetch.
+        patch(def.id, () => ({ status: "ok", items: [], counter: null, updatedAt: Date.now(), stale: false }));
+        return;
+      }
       if (loading.current.has(def.id)) return;
       loading.current.add(def.id);
       patch(def.id, (p) => (p.items.length ? p : { ...p, status: "loading" }));

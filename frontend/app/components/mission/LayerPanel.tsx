@@ -6,7 +6,8 @@ import { useLayerStore, type LayerState } from "../../context/LayerStore";
 import { useNow } from "../../hooks/usePrefs";
 import { timeAgo } from "../../lib/format";
 
-function Status({ st, t, now }: { st: LayerState | undefined; t: Record<string, string>; now: number }) {
+function Status({ def, st, t, now }: { def: LayerDef; st: LayerState | undefined; t: Record<string, string>; now: number }) {
+  if (!def.endpoint) return <span className="text-gray-500">{t.layerComputed}</span>;
   if (!st || st.status === "idle" || (st.status === "loading" && !st.items.length))
     return <span className="text-gray-500">{t.layerLoading}</span>;
   if (st.status === "error") return <span className="text-orange-300">{t.layerRetrying}</span>;
@@ -46,7 +47,7 @@ function LayerRow({ def }: { def: LayerDef }) {
           </span>
           {on && (
             <span className="block text-[11px] leading-4" aria-live="polite">
-              <Status st={st} t={t} now={now} />
+              <Status def={def} st={st} t={t} now={now} />
             </span>
           )}
         </span>

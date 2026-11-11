@@ -1,5 +1,5 @@
 import { LAYER_BY_ID } from "../../layers";
-import type { ArrowSpec, LayerDef, LayerItem, PulseSpec } from "../../layers/types";
+import type { ArrowSpec, LayerDef, LayerItem, PulseSpec, TintSpec } from "../../layers/types";
 import type { LayerState } from "../../context/LayerStore";
 
 /** One renderable marker, shared by the 3D globe and the 2D map. */
@@ -57,6 +57,16 @@ export function buildPoints(
   if (pulsing.length > MAX_PULSES) {
     pulsing.sort((a, b) => (b.item.time ?? 0) - (a.item.time ?? 0));
     for (const p of pulsing.slice(MAX_PULSES)) p.pulse = null;
+  }
+  return out;
+}
+
+/** Colour washes (day/night) of the active layers, evaluated at `now`. */
+export function buildTints(activeIds: string[], now: number): TintSpec[] {
+  const out: TintSpec[] = [];
+  for (const id of activeIds) {
+    const t = LAYER_BY_ID[id]?.tint?.(now);
+    if (t) out.push(t);
   }
   return out;
 }

@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import { useAppState } from "../context/AppState";
 import { LayerStoreProvider, useLayerStore } from "../context/LayerStore";
 import { LAYER_BY_ID } from "../layers";
-import { useReducedMotion } from "../hooks/usePrefs";
-import { buildPoints } from "../components/mission/points";
+import { useNow, useReducedMotion } from "../hooks/usePrefs";
+import { buildPoints, buildTints } from "../components/mission/points";
 import LayerPanel from "../components/mission/LayerPanel";
 import DetailPanel from "../components/mission/DetailPanel";
 import StatChips from "../components/mission/StatChips";
@@ -39,6 +39,10 @@ function Stage() {
     [activeLayers, states, selectedKey]
   );
 
+  // Day/night moves 1.25° per 5 min: re-evaluate the washes on that cadence, not every render.
+  const tintNow = useNow(300_000);
+  const tints = useMemo(() => buildTints(activeLayers, tintNow), [activeLayers, tintNow]);
+
   const onSelect = (key: string | null) => {
     select(key ?? "");
     if (key) setMobileLayersOpen(false);
@@ -49,7 +53,7 @@ function Stage() {
     for (const id of activeLayers) {
       const def = LAYER_BY_ID[id];
       const st = states[id];
-      if (!def) continue;
+      if (!def || !def.endpoint) continue;
       if (st?.status === "error") return `⚠️ ${t[def.labelKey]}: ${t.layerRetrying}`;
       if (!st || st.status === "idle" || (st.status === "loading" && !st.items.length))
         return `${t.layerLoading.replace("…", "")} ${t[def.labelKey]}…`;
@@ -66,6 +70,7 @@ function Stage() {
         (mapMode === "3d" ? (
           <GlobeStage
             points={points}
+            tints={tints}
             onSelect={onSelect}
             units={units}
             reducedMotion={reduced}
@@ -76,6 +81,7 @@ function Stage() {
         ) : (
           <FlatMap
             points={points}
+            tints={tints}
             onSelect={onSelect}
             units={units}
             reducedMotion={reduced}

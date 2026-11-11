@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { escapeHtml } from "../../lib/format";
-import type { UnitCtx } from "../../layers/types";
+import type { TintSpec, UnitCtx } from "../../layers/types";
 import type { MapPoint } from "./points";
 import { arrowPath } from "./arrows";
+import { equirect, rasterizeTints } from "./tint";
 
 interface Props {
   points: MapPoint[];
+  tints: TintSpec[];
   onSelect: (key: string | null) => void;
   units: UnitCtx;
   reducedMotion: boolean;
@@ -16,6 +18,7 @@ interface Props {
 }
 
 const BG = "#05070d";
+const TEXTURE = "/textures/earth-night.jpg";
 const INTRO_KEY = "earthwatch:intro";
 const INTRO_MS = 2800;
 const isNarrow = (el: HTMLElement | null) => !!el && el.clientWidth < 600;
@@ -56,7 +59,7 @@ function introSeen(): boolean {
 }
 
 export default function GlobeStage({
-  points, onSelect, units, reducedMotion, geo, geoSettled, onWebGLFailure,
+  points, tints, onSelect, units, reducedMotion, geo, geoSettled, onWebGLFailure,
 }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<any>(null);
@@ -129,7 +132,7 @@ export default function GlobeStage({
           .width(el.clientWidth || 800)
           .height(el.clientHeight || 600)
           .backgroundColor(BG)
-          .globeImageUrl("/textures/earth-night.jpg")
+          .globeImageUrl(TEXTURE)
           .pointsTransitionDuration(300)
           .pointLat((d: MapPoint) => d.item.lat)
           .pointLng((d: MapPoint) => d.item.lon)
@@ -222,6 +225,59 @@ export default function GlobeStage({
     }
     g.pathsData(arrows);
   }, [points, ready]);
+
+  // ---- colour washes (day/night): baked into the globe texture; no tint -> the plain texture ----
+  const baseImg = useRef<HTMLImageElement | null>(null);
+  const texUrl = useRef<string | null>(null);
+  useEffect(() => {
+    const g = globeRef.current;
+    if (!g || !ready) return;
+    let cancelled = false;
+    const retire = (url: string | null) => {
+      if (url) setTimeout(() => URL.revokeObjectURL(url), 3000); // let the GPU upload finish first
+    };
+    if (!tints.length) {
+      if (texUrl.current) {
+        g.globeImageUrl(TEXTURE);
+        retire(texUrl.current);
+        texUrl.current = null;
+      }
+      return;
+    }
+    (async () => {
+      try {
+        if (!baseImg.current) {
+          const img = new Image();
+          img.src = TEXTURE;
+          await img.decode();
+          baseImg.current = img;
+        }
+        const base = baseImg.current;
+        const wash = rasterizeTints(tints, 720, 360, equirect(720, 360));
+        if (!wash || cancelled) return;
+        const canvas = document.createElement("canvas");
+        canvas.width = base.naturalWidth;
+        canvas.height = base.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(base, 0, 0);
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(wash, 0, 0, canvas.width, canvas.height);
+        const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.9));
+        if (!blob || cancelled || !globeRef.current) return;
+        const url = URL.createObjectURL(blob);
+        globeRef.current.globeImageUrl(url);
+        retire(texUrl.current);
+        texUrl.current = url;
+      } catch (e) {
+        console.error("Day/night wash failed:", e); // the plain texture stays: never break the globe
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tints, ready]);
+  useEffect(() => () => { if (texUrl.current) URL.revokeObjectURL(texUrl.current); }, []);
 
   // ---- rings: layer pulses on fresh items + the selection ring (none under reduced motion) ----
   useEffect(() => {

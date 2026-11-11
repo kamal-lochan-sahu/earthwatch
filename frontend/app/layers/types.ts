@@ -40,6 +40,14 @@ export interface ArrowSpec {
   color: string;
 }
 
+/** A translucent colour wash over the map (e.g. the sunlit side of the Earth). Sampled per pixel. */
+export interface TintSpec {
+  key: string;
+  rgb: [number, number, number];
+  /** Opacity 0..1 at a position, in degrees. */
+  alphaAt: (lat: number, lon: number) => number;
+}
+
 export interface LegendEntry {
   color: string;
   label: string;
@@ -72,6 +80,7 @@ export interface LayerDef {
   /** Key into the translations table (falls back to English). */
   labelKey: string;
   color: string;
+  /** Backend path. Empty for client-only layers (computed on the device, nothing to fetch). */
   endpoint: string;
   refreshSec: number;
   defaultOn: boolean;
@@ -89,6 +98,8 @@ export interface LayerDef {
   pulse?: (item: LayerItem, now: number) => PulseSpec | null;
   /** Optional: a direction arrow from each item (wind). Return null to draw none. */
   arrow?: (item: LayerItem) => ArrowSpec | null;
+  /** Optional: a colour wash over the whole map (day/night). Re-evaluated every couple of minutes. */
+  tint?: (now: number) => TintSpec;
   /** Optional: one-line ticker text (the ticker appends the relative time itself). */
   ticker?: (item: LayerItem, u: UnitCtx) => string;
   /** Optional: a headline counter for the ticker, read from the raw endpoint JSON. */

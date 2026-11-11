@@ -6,12 +6,14 @@ import { select as d3select } from "d3-selection";
 import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import world from "world-atlas/countries-110m.json";
-import type { UnitCtx } from "../../layers/types";
+import type { TintSpec, UnitCtx } from "../../layers/types";
 import type { MapPoint } from "./points";
 import { arrowPath, crossesAntimeridian } from "./arrows";
+import { rasterizeTints } from "./tint";
 
 interface Props {
   points: MapPoint[];
+  tints: TintSpec[];
   onSelect: (key: string | null) => void;
   units: UnitCtx;
   reducedMotion: boolean;
@@ -26,7 +28,7 @@ const BORDERS = mesh(topo, topo.objects.countries, (a, b) => a !== b);
  * Dependency-light 2D fallback for devices without WebGL: bundled world outline (no map
  * tiles, no network), same layers/points as the globe, pan + zoom.
  */
-export default function FlatMap({ points, onSelect, units, reducedMotion, labels }: Props) {
+export default function FlatMap({ points, tints, onSelect, units, reducedMotion, labels }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown>>();
@@ -91,6 +93,23 @@ export default function FlatMap({ points, onSelect, units, reducedMotion, labels
     [points, projection]
   );
 
+  // Colour washes (day/night): sampled at half resolution through the projection, shown as one image.
+  const wash = useMemo(() => {
+    if (!tints.length) return null;
+    const cw = Math.ceil(size.w / 2);
+    const ch = Math.ceil(size.h / 2);
+    const canvas = rasterizeTints(tints, cw, ch, (x, y) => {
+      const sx = (x * size.w) / cw;
+      const sy = (y * size.h) / ch;
+      const ll = projection.invert?.([sx, sy]);
+      if (!ll || !isFinite(ll[0]) || !isFinite(ll[1]) || Math.abs(ll[0]) > 180 || Math.abs(ll[1]) > 90) return null;
+      const back = projection(ll);
+      if (!back || Math.hypot(back[0] - sx, back[1] - sy) > 1.5) return null; // outside the map outline
+      return ll;
+    });
+    return canvas ? canvas.toDataURL("image/png") : null;
+  }, [tints, projection, size]);
+
   // Direction arrows (wind) as projected polylines; the few that wrap the date line are skipped.
   const arrows = useMemo(() => {
     const out: { key: string; color: string; d: string }[] = [];
@@ -121,6 +140,9 @@ export default function FlatMap({ points, onSelect, units, reducedMotion, labels
         <g transform={tf.toString()}>
           <path d={landPath} fill="#111a2b" stroke="none" onClick={() => onSelect(null)} />
           <path d={borderPath} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={0.5 / tf.k} />
+          {wash && (
+            <image href={wash} x={0} y={0} width={size.w} height={size.h} preserveAspectRatio="none" pointerEvents="none" />
+          )}
           {arrows.map((a) => (
             <path
               key={a.key}
