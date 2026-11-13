@@ -65,6 +65,8 @@ export const translations: Record<string, Record<string, string>> = {
     layerFloods: "River flood watch",
     counterFloods: "rivers running high",
     layerTerminator: "Day & night",
+    layerAurora: "Aurora oval",
+    counterKp: "Kp index",
     layerComputed: "live \u00b7 computed on your device",
     hazardsTitle: "Active hazards",
     hazardsSource: "Sources: GDACS and NASA EONET \u00b7 wildfires, cyclones & storms, volcanoes, icebergs",

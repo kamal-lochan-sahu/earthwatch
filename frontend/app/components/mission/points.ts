@@ -61,12 +61,17 @@ export function buildPoints(
   return out;
 }
 
-/** Colour washes (day/night) of the active layers, evaluated at `now`. */
-export function buildTints(activeIds: string[], now: number): TintSpec[] {
+/** Colour washes (day/night, aurora) of the active layers, evaluated at `now`. */
+export function buildTints(activeIds: string[], states: Record<string, LayerState>, now: number): TintSpec[] {
   const out: TintSpec[] = [];
   for (const id of activeIds) {
-    const t = LAYER_BY_ID[id]?.tint?.(now);
-    if (t) out.push(t);
+    const def = LAYER_BY_ID[id];
+    if (!def?.tint) continue;
+    // A layer that fetches data paints nothing until the first load has arrived.
+    if (def.endpoint && !states[id]?.data) continue;
+    const t = def.tint(now, states[id]?.data);
+    if (Array.isArray(t)) out.push(...t);
+    else if (t) out.push(t);
   }
   return out;
 }

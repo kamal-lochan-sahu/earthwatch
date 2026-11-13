@@ -44,7 +44,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, Globe.gl |
 | Backend | FastAPI, Python 3.11, Uvicorn |
 | ML | Scikit-learn (Isolation Forest), SciPy (Linear Regression) |
-| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited; also the global wind grid; Open-Meteo Marine for ocean waves; Open-Meteo Flood for rivers), NOAA CO2, GDACS Events & Cyclones, USGS Earthquakes, NASA EONET (wildfires, volcanoes, icebergs, storms) |
+| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited; also the global wind grid; Open-Meteo Marine for ocean waves; Open-Meteo Flood for rivers), NOAA CO2, NOAA SWPC (aurora oval, Kp index), GDACS Events & Cyclones, USGS Earthquakes, NASA EONET (wildfires, volcanoes, icebergs, storms) |
 | Deploy | Vercel (Frontend), Render (Backend) |
 | PWA | Web App Manifest, Custom Icons |
 | i18n | 21 Languages — Auto region detection via ipapi.co |
@@ -100,6 +100,7 @@ German, French, Japanese, Spanish, Arabic, Portuguese, Chinese, Korean, Italian,
 | `GET /api/wind` | Global wind field (Open-Meteo, 15° grid, 264 points): speed, direction and gusts per point. Cached 3 h, serves the last good copy if Open-Meteo rate-limits |
 | `GET /api/waves` | Open-ocean wave height, direction and period (Open-Meteo Marine, ~111 ocean grid points). Cached 3 h, serves the last good copy if Open-Meteo rate-limits |
 | `GET /api/floods` | 53 major rivers (Open-Meteo Flood / GloFAS): discharge today, 7-day forecast peak and its ratio to the 30-day median. A rising-water signal, not an official flood warning. Cached 6 h, serves the last good copy if Open-Meteo rate-limits |
+| `GET /api/aurora` | Aurora oval (NOAA SWPC OVATION, probability of visible aurora on a 2° grid, 91 × 180) plus the current Kp index and NOAA G-scale. Cached 5 min, serves the last good copy if NOAA is down; `stale` is also set when NOAA itself stops publishing. Painted on the map as a colour wash, no points |
 | `GET /api/export/csv` | Historical data export (JSON; frontend converts to CSV) |
 | `GET /api/climate-index` | El Niño / La Niña detection (NOAA ONI Index) |
 | `GET /api/arctic-ice` | Arctic sea ice extent (NSIDC) |

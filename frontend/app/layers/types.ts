@@ -98,8 +98,11 @@ export interface LayerDef {
   pulse?: (item: LayerItem, now: number) => PulseSpec | null;
   /** Optional: a direction arrow from each item (wind). Return null to draw none. */
   arrow?: (item: LayerItem) => ArrowSpec | null;
-  /** Optional: a colour wash over the whole map (day/night). Re-evaluated every couple of minutes. */
-  tint?: (now: number) => TintSpec;
+  /**
+   * Optional: colour washes over the whole map (day/night, aurora). `data` is the layer's raw endpoint JSON
+   * (undefined for client-only layers). Return null while there is nothing to paint. Re-evaluated every 5 min.
+   */
+  tint?: (now: number, data: any) => TintSpec | TintSpec[] | null;
   /** Optional: one-line ticker text (the ticker appends the relative time itself). */
   ticker?: (item: LayerItem, u: UnitCtx) => string;
   /** Optional: a headline counter for the ticker, read from the raw endpoint JSON. */

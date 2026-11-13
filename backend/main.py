@@ -6,6 +6,7 @@ from data.hazards.earthquakes import build_earthquake_response, WINDOWS as EARTH
 from data.hazards.feeds import build_layer_response, build_hazards_response, CATEGORY_TO_LAYER
 from data.hazards.wind import build_wind_response
 from data.hazards.waves import build_waves_response
+from data.hazards.aurora import build_aurora_response
 from data.hazards.floods import build_floods_response
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
@@ -199,6 +200,14 @@ def get_waves():
     data = build_waves_response()
     if "error" in data:
         raise HTTPException(status_code=502, detail=f"Wave data source is temporarily unavailable: {data['error']}")
+    return data
+
+@app.get("/api/aurora")
+def get_aurora():
+    """Aurora oval (NOAA SWPC OVATION, 2-degree grid of visibility probability) plus the current Kp index"""
+    data = build_aurora_response()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"Aurora data source is temporarily unavailable: {data['error']}")
     return data
 
 @app.get("/api/floods")

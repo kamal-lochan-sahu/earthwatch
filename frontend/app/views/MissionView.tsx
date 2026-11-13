@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useAppState } from "../context/AppState";
 import { LayerStoreProvider, useLayerStore } from "../context/LayerStore";
@@ -41,7 +41,18 @@ function Stage() {
 
   // Day/night moves 1.25° per 5 min: re-evaluate the washes on that cadence, not every render.
   const tintNow = useNow(300_000);
-  const tints = useMemo(() => buildTints(activeLayers, tintNow), [activeLayers, tintNow]);
+  const statesRef = useRef(states);
+  statesRef.current = states;
+  // Re-bake only when a tint layer's own data changes, not on every other layer's refresh.
+  const tintDataKey = activeLayers
+    .filter((id) => LAYER_BY_ID[id]?.tint)
+    .map((id) => `${id}:${states[id]?.updatedAt ?? 0}`)
+    .join(",");
+  const tints = useMemo(
+    () => buildTints(activeLayers, statesRef.current, tintNow),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeLayers, tintNow, tintDataKey]
+  );
 
   const onSelect = (key: string | null) => {
     select(key ?? "");

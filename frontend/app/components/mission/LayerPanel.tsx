@@ -13,12 +13,9 @@ function Status({ def, st, t, now }: { def: LayerDef; st: LayerState | undefined
   if (st.status === "error") return <span className="text-orange-300">{t.layerRetrying}</span>;
   if (st.stale && st.updatedAt)
     return <span className="text-yellow-300">{t.layerStale} {timeAgo(st.updatedAt, now)}</span>;
-  return (
-    <span className="text-gray-500">
-      {st.items.length} {t.pointsCount}
-      {st.updatedAt ? ` · ${t.layerUpdated} ${timeAgo(st.updatedAt, now)}` : ""}
-    </span>
-  );
+  const count = def.tint ? "" : `${st.items.length} ${t.pointsCount}`; // a wash has no markers to count
+  const age = st.updatedAt ? `${t.layerUpdated} ${timeAgo(st.updatedAt, now)}` : "";
+  return <span className="text-gray-500">{[count, age].filter(Boolean).join(" · ")}</span>;
 }
 
 function LayerRow({ def }: { def: LayerDef }) {

@@ -22,6 +22,8 @@ export interface LayerState {
   stale: boolean;
   /** Headline number from the layer's `counter()` (e.g. quakes in the last 24h). */
   counter: { labelKey: string; value: number } | null;
+  /** The endpoint's raw JSON, for layers that paint a tint (aurora) instead of / besides markers. */
+  data?: any;
 }
 
 const EMPTY: LayerState = { status: "idle", items: [], updatedAt: null, stale: false, counter: null };
@@ -75,6 +77,7 @@ export function LayerStoreProvider({ children }: { children: React.ReactNode }) 
           status: "ok",
           items,
           counter,
+          data: def.tint ? json : undefined,
           updatedAt: Number.isFinite(backendAt) ? backendAt : Date.now(),
           stale: backendStale,
         }));
