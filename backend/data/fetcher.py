@@ -1022,6 +1022,7 @@ def fetch_api_health():
         ("waves", "/api/waves"),
         ("floods", "/api/floods"),
         ("aurora", "/api/aurora"),
+        ("tsunamis", "/api/tsunamis"),
         ("climate_index", "/api/climate-index"),
         ("arctic_ice", "/api/arctic-ice"),
         ("air_quality", "/api/air-quality"),

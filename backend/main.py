@@ -7,6 +7,7 @@ from data.hazards.feeds import build_layer_response, build_hazards_response, CAT
 from data.hazards.wind import build_wind_response
 from data.hazards.waves import build_waves_response
 from data.hazards.aurora import build_aurora_response
+from data.hazards.tsunami import build_tsunami_response
 from data.hazards.floods import build_floods_response
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
@@ -208,6 +209,14 @@ def get_aurora():
     data = build_aurora_response()
     if "error" in data:
         raise HTTPException(status_code=502, detail=f"Aurora data source is temporarily unavailable: {data['error']}")
+    return data
+
+@app.get("/api/tsunamis")
+def get_tsunamis():
+    """Latest tsunami messages from the NOAA warning centers (last 48 h): information statements, advisories, watches, warnings"""
+    data = build_tsunami_response()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"Tsunami data source is temporarily unavailable: {data['error']}")
     return data
 
 @app.get("/api/floods")

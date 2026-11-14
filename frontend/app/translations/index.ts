@@ -64,6 +64,8 @@ export const translations: Record<string, Record<string, string>> = {
     layerWaves: "Ocean waves",
     layerFloods: "River flood watch",
     counterFloods: "rivers running high",
+    layerTsunamis: "Tsunami alerts",
+    counterTsunamis: "tsunami alerts",
     layerTerminator: "Day & night",
     layerAurora: "Aurora oval",
     counterKp: "Kp index",

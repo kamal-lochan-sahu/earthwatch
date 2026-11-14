@@ -7,6 +7,7 @@ import { volcanoesLayer } from "./volcanoes";
 import { icebergsLayer } from "./icebergs";
 import { windLayer } from "./wind";
 import { wavesLayer } from "./waves";
+import { tsunamisLayer } from "./tsunamis";
 import { floodsLayer } from "./floods";
 import { terminatorLayer } from "./terminator";
 import { auroraLayer } from "./aurora";
@@ -21,6 +22,7 @@ export const LAYERS: LayerDef[] = [
   icebergsLayer,
   windLayer,
   wavesLayer,
+  tsunamisLayer,
   floodsLayer,
   terminatorLayer,
   auroraLayer,
