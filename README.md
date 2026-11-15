@@ -44,7 +44,7 @@ EarthWatch is a full-stack climate intelligence platform that:
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, Globe.gl |
 | Backend | FastAPI, Python 3.11, Uvicorn |
 | ML | Scikit-learn (Isolation Forest), SciPy (Linear Regression) |
-| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited; also the global wind grid; Open-Meteo Marine for ocean waves; Open-Meteo Flood for rivers), NOAA CO2, NOAA SWPC (aurora oval, Kp index), NOAA tsunami warning centers, GDACS Events & Cyclones, USGS Earthquakes, NASA EONET (wildfires, volcanoes, icebergs, storms) |
+| Data Sources | NASA POWER, Open-Meteo (city temperatures fall back to MET Norway when rate-limited; also the global wind grid; Open-Meteo Marine for ocean waves; Open-Meteo Flood for rivers), NOAA CO2, NOAA SWPC (aurora oval, Kp index), NOAA tsunami warning centers, NOAA Coral Reef Watch (sea-surface temperature anomaly, coral bleaching heat stress), GDACS Events & Cyclones, USGS Earthquakes, NASA EONET (wildfires, volcanoes, icebergs, storms) |
 | Deploy | Vercel (Frontend), Render (Backend) |
 | PWA | Web App Manifest, Custom Icons |
 | i18n | 21 Languages — Auto region detection via ipapi.co |
@@ -102,6 +102,7 @@ German, French, Japanese, Spanish, Arabic, Portuguese, Chinese, Korean, Italian,
 | `GET /api/floods` | 53 major rivers (Open-Meteo Flood / GloFAS): discharge today, 7-day forecast peak and its ratio to the 30-day median. A rising-water signal, not an official flood warning. Cached 6 h, serves the last good copy if Open-Meteo rate-limits |
 | `GET /api/aurora` | Aurora oval (NOAA SWPC OVATION, probability of visible aurora on a 2° grid, 91 × 180) plus the current Kp index and NOAA G-scale. Cached 5 min, serves the last good copy if NOAA is down; `stale` is also set when NOAA itself stops publishing. Painted on the map as a colour wash, no points |
 | `GET /api/tsunamis` | Latest tsunami messages from the two NOAA warning centers (NTWC and PTWC Atom feeds), last 48 h: information statements, advisories, watches, threat messages, warnings, each with epicentre, magnitude and a link to the official bulletin. Usually only no-threat information statements, so `counts.active` (real alerts) is normally 0. Cached 5 min, serves the last good copy if NOAA is down; `stale` is also set when one of the two feeds could not be read. A relay of the official messages, not a warning system |
+| `GET /api/ocean-heat` | Latest day of NOAA Coral Reef Watch CoralTemp (ERDDAP, 5 km sampled to 1°): sea-surface temperature anomaly (2° grid, tenths of °C) and the 7-day-max Bleaching Alert Area (1° grid, one 0–4 digit per cell, `.` = land/ice) with headline counts. Painted as colour washes, no points. Cached 6 h and shared between concurrent callers (the query is ~3.5 MB), serves the last good copy if NOAA is down; `stale` is also set when NOAA's own latest day is more than 5 days old |
 | `GET /api/export/csv` | Historical data export (JSON; frontend converts to CSV) |
 | `GET /api/climate-index` | El Niño / La Niña detection (NOAA ONI Index) |
 | `GET /api/arctic-ice` | Arctic sea ice extent (NSIDC) |

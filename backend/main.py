@@ -8,6 +8,7 @@ from data.hazards.wind import build_wind_response
 from data.hazards.waves import build_waves_response
 from data.hazards.aurora import build_aurora_response
 from data.hazards.tsunami import build_tsunami_response
+from data.hazards.ocean_heat import build_ocean_heat_response
 from data.hazards.floods import build_floods_response
 from ml.anomaly_detector import AnomalyDetector
 from ml.trend_analyzer import TrendAnalyzer
@@ -217,6 +218,14 @@ def get_tsunamis():
     data = build_tsunami_response()
     if "error" in data:
         raise HTTPException(status_code=502, detail=f"Tsunami data source is temporarily unavailable: {data['error']}")
+    return data
+
+@app.get("/api/ocean-heat")
+def get_ocean_heat():
+    """Sea-surface temperature anomaly + coral bleaching heat stress (NOAA Coral Reef Watch, 1-degree grids, latest day)"""
+    data = build_ocean_heat_response()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"Ocean heat data source is temporarily unavailable: {data['error']}")
     return data
 
 @app.get("/api/floods")
